@@ -2,22 +2,23 @@ import {
   AppBar,
   Box,
   Button,
-  ButtonProps,
   IconButton,
   List,
-  ListItem,
+  ListItemButton,
   ListItemIcon,
   ListItemText,
-  styled,
   SwipeableDrawer,
   Toolbar,
+  Typography,
+  Theme,
 } from '@mui/material';
 import { useState } from 'react';
 import MenuIcon from '@mui/icons-material/Menu';
 import HomeRoundedIcon from '@mui/icons-material/HomeRounded';
 import EventAvailableRoundedIcon from '@mui/icons-material/EventAvailableRounded';
 import MedicationRoundedIcon from '@mui/icons-material/MedicationRounded';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
+import { makeStyles } from '@mui/styles';
 
 const menuItems = [
   { title: 'Home', icon: <HomeRoundedIcon />, route: '/' },
@@ -29,20 +30,27 @@ const menuItems = [
   },
 ];
 
-// custom style for menu button
-const TextButton = styled(Button)<ButtonProps>(({ theme }) => ({
-  color: theme.palette.common.black,
-  backgroundColor: 'transparent',
-  textTransform: 'capitalize',
-  '&:hover': {
-    color: theme.palette.primary.main,
-    backgroundColor: 'transparent',
+const useStyles = makeStyles((theme: Theme) => ({
+  title: {
+    fontSize: theme.typography.h5.fontSize,
+    backgroundImage: 'linear-gradient(to right, #48c6ef 0%, #6f86d6 100%)',
+    '-webkit-background-clip': 'text',
+    '-webkit-text-fill-color': 'transparent',
   },
-  marginRight: 2,
-  fontSize: 'subtitle1.fontSize',
+  textButton: {
+    color: theme.palette.common.black,
+    backgroundColor: 'transparent',
+    '&:hover': {
+      color: theme.palette.primary.light,
+      backgroundColor: 'transparent',
+    },
+    fontSize: theme.typography.subtitle1.fontSize,
+  },
 }));
 
-const Navbar: React.FC = () => {
+const Navbar: React.FC = (props) => {
+  const classes = useStyles(props);
+  const location = useLocation();
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
 
   const toggleDrawer =
@@ -64,18 +72,27 @@ const Navbar: React.FC = () => {
       sx={{ background: 'transparent', boxShadow: 'none' }}
     >
       <Toolbar>
-        {/* menu button in mobile */}
+        {/* navbar in mobile */}
         <IconButton
           sx={{ display: { xs: 'flex', md: 'none' }, mr: 2 }}
           size="large"
           edge="start"
-          color="inherit"
+          color="default"
           aria-label="menu"
           onClick={toggleDrawer(true)}
         >
           <MenuIcon />
         </IconButton>
-        {/* menu drawer in mobile */}
+        <Link to="/">
+          <Typography
+            variant="h5"
+            fontWeight="bold"
+            mr={2}
+            className={classes.title}
+          >
+            FindDoctor
+          </Typography>
+        </Link>
         <SwipeableDrawer
           anchor="left"
           open={isDrawerOpen}
@@ -91,26 +108,26 @@ const Navbar: React.FC = () => {
             <List>
               {menuItems.map((item, index) => (
                 <Link to={item.route} key={index}>
-                  <ListItem button>
+                  <ListItemButton selected={location.pathname === item.route}>
                     <ListItemIcon>{item.icon}</ListItemIcon>
                     <ListItemText primary={item.title} />
-                  </ListItem>
+                  </ListItemButton>
                 </Link>
               ))}
             </List>
           </Box>
         </SwipeableDrawer>
-        {/* menu buttons in desktop */}
-        {menuItems.map((item, index) => (
+
+        {/* navbar in desktop */}
+        {menuItems.slice(1).map((item, index) => (
           <Link to={item.route} key={index}>
-            <TextButton
-              sx={{
-                display: { xs: 'none', md: 'block' },
-                fontWeight: item.title === 'Home' ? 'bold' : 'normal',
-              }}
+            <Button
+              className={classes.textButton}
+              disableRipple
+              sx={{ display: { xs: 'none', md: 'block' } }}
             >
               {item.title}
-            </TextButton>
+            </Button>
           </Link>
         ))}
       </Toolbar>

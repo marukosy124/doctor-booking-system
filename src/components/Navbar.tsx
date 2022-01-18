@@ -11,6 +11,8 @@ import {
   Toolbar,
   Typography,
   Theme,
+  ButtonProps,
+  styled,
 } from '@mui/material';
 import { useState } from 'react';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -30,21 +32,24 @@ const menuItems = [
   },
 ];
 
+// custom button for menu item
+const TextButton = styled(Button)<ButtonProps>(({ theme }) => ({
+  color: theme.palette.common.black,
+  backgroundColor: 'transparent',
+  textTransform: 'capitalize',
+  '&:hover': {
+    color: theme.palette.primary.main,
+    backgroundColor: 'transparent',
+  },
+  fontSize: theme.typography.subtitle1.fontSize,
+}));
+
 const useStyles = makeStyles((theme: Theme) => ({
   title: {
     fontSize: theme.typography.h5.fontSize,
     backgroundImage: 'linear-gradient(to right, #48c6ef 0%, #6f86d6 100%)',
     '-webkit-background-clip': 'text',
     '-webkit-text-fill-color': 'transparent',
-  },
-  textButton: {
-    color: theme.palette.common.black,
-    backgroundColor: 'transparent',
-    '&:hover': {
-      color: theme.palette.primary.light,
-      backgroundColor: 'transparent',
-    },
-    fontSize: theme.typography.subtitle1.fontSize,
   },
 }));
 
@@ -121,13 +126,13 @@ const Navbar: React.FC = (props) => {
         {/* navbar in desktop */}
         {menuItems.slice(1).map((item, index) => (
           <Link to={item.route} key={index}>
-            <Button
-              className={classes.textButton}
+            <TextButton
+              // className={classes.textButton}
               disableRipple
               sx={{ display: { xs: 'none', md: 'block' } }}
             >
               {item.title}
-            </Button>
+            </TextButton>
           </Link>
         ))}
       </Toolbar>

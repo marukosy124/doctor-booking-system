@@ -6,6 +6,7 @@ export const customTheme = createTheme({
       styleOverrides: {
         root: {
           textTransform: 'capitalize',
+          backgroundColor: '#42a5f5',
         },
       },
     },

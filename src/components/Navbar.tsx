@@ -127,7 +127,6 @@ const Navbar: React.FC = (props) => {
         {menuItems.slice(1).map((item, index) => (
           <Link to={item.route} key={index}>
             <TextButton
-              // className={classes.textButton}
               disableRipple
               sx={{ display: { xs: 'none', md: 'block' } }}
             >

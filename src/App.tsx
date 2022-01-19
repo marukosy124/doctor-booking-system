@@ -6,17 +6,22 @@ import BookingsPage from './pages/BookingsPage';
 import Navbar from './components/Navbar';
 import { ThemeProvider } from '@mui/material/styles';
 import { customTheme } from './theme/theme';
+import { QueryClient, QueryClientProvider } from 'react-query';
 
 const App = () => {
+  const queryClient = new QueryClient();
+
   return (
     <ThemeProvider theme={customTheme}>
-      <Navbar />
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/doctors" element={<DoctorsPage />} />
-        <Route path="/bookings" element={<BookingsPage />} />
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
+      <QueryClientProvider client={queryClient}>
+        <Navbar />
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/doctors" element={<DoctorsPage />} />
+          <Route path="/bookings" element={<BookingsPage />} />
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </QueryClientProvider>
     </ThemeProvider>
   );
 };

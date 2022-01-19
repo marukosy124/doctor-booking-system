@@ -1,5 +1,6 @@
 import {
   Box,
+  CircularProgress,
   Container,
   IconButton,
   TextField,
@@ -12,6 +13,8 @@ import { IDoctor } from '../types/DoctorTypes';
 import Carousel from 'react-multi-carousel';
 import 'react-multi-carousel/lib/styles.css';
 import DoctorCard from '../components/DoctorCard';
+import { ChangeEvent, useState, KeyboardEvent } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 
 const responsive = {
   desktop: {
@@ -32,10 +35,20 @@ const responsive = {
 };
 
 const HomePage: React.FC = () => {
-  const { data: doctors } = useQuery('doctors', getDoctors, {
+  const navigate = useNavigate();
+
+  const [searchQuery, setSearchQuery] = useState<string>('');
+
+  const { data: doctors, isFetching } = useQuery('doctors', getDoctors, {
     retry: false,
     refetchOnWindowFocus: false,
   });
+
+  const handleOnEnterPress = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Enter') {
+      navigate(`/doctors?q=${searchQuery}`);
+    }
+  };
 
   return (
     <Container sx={{ p: 2, mx: 'auto' }}>
@@ -43,13 +56,20 @@ const HomePage: React.FC = () => {
         Find your doctor and make a booking
       </Typography>
       <TextField
+        value={searchQuery}
+        onChange={(e: ChangeEvent<HTMLInputElement>) =>
+          setSearchQuery(e.target.value)
+        }
+        onKeyPress={handleOnEnterPress}
         fullWidth
         placeholder="Search Doctor"
         InputProps={{
           endAdornment: (
-            <IconButton color="primary" size="large">
-              <SearchRoundedIcon />
-            </IconButton>
+            <Link to={`/doctors?q=${searchQuery}`}>
+              <IconButton color="primary" size="large">
+                <SearchRoundedIcon />
+              </IconButton>
+            </Link>
           ),
         }}
       />
@@ -57,19 +77,33 @@ const HomePage: React.FC = () => {
       <Typography variant="h6" fontWeight="bold" py="2rem">
         Available Doctors
       </Typography>
-      {doctors && doctors.length > 0 ? (
-        <Carousel responsive={responsive} removeArrowOnDeviceType={['mobile']}>
-          {doctors?.map((doctor: IDoctor) => (
-            <DoctorCard {...doctor} />
-          ))}
-        </Carousel>
-      ) : (
-        <Box justifyContent="center" height={300} alignItems="center">
-          <Typography variant="subtitle1" textAlign="center">
-            No doctors available
-          </Typography>
-        </Box>
-      )}
+      <Box
+        display={isFetching || doctors?.length === 0 ? 'flex' : 'block'}
+        justifyContent="center"
+        height={400}
+        alignItems="center"
+      >
+        {isFetching ? (
+          <CircularProgress />
+        ) : (
+          <>
+            {doctors && doctors.length > 0 ? (
+              <Carousel
+                responsive={responsive}
+                removeArrowOnDeviceType={['mobile']}
+              >
+                {doctors?.map((doctor: IDoctor) => (
+                  <DoctorCard {...doctor} key={doctor.id} />
+                ))}
+              </Carousel>
+            ) : (
+              <Typography variant="subtitle1" textAlign="center">
+                No doctors available
+              </Typography>
+            )}
+          </>
+        )}
+      </Box>
     </Container>
   );
 };

@@ -8,6 +8,7 @@ import {
 import { IDoctor } from '../types/DoctorTypes';
 import DoctorIcon from '../images/doctor.png';
 import PinDropRoundedIcon from '@mui/icons-material/PinDropRounded';
+import { Link } from 'react-router-dom';
 
 type PropsType = IDoctor;
 
@@ -45,9 +46,11 @@ const DoctorCard: React.FC<PropsType> = (props) => {
         </Typography>
       </CardContent>
       <CardActions sx={{ padding: '1rem' }}>
-        <Button fullWidth sx={{ borderRadius: 10 }} variant="contained">
-          Book Now
-        </Button>
+        <Link to={`/doctors?id=${props.id}`} style={{ width: '100%' }}>
+          <Button fullWidth sx={{ borderRadius: 10 }} variant="contained">
+            Book Now
+          </Button>
+        </Link>
       </CardActions>
     </Card>
   );

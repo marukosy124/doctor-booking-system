@@ -6,7 +6,13 @@ export const customTheme = createTheme({
       styleOverrides: {
         root: {
           textTransform: 'capitalize',
+        },
+        contained: {
           backgroundColor: '#42a5f5',
+          boxShadow: 'none',
+          '&:hover': {
+            boxShadow: 'none',
+          },
         },
       },
     },

@@ -34,14 +34,16 @@ const DoctorCard: React.FC<PropsType> = (props) => {
           height={100}
           style={{ margin: '1rem' }}
         />
-        <Typography variant="subtitle1">{props.name}</Typography>
+        <Typography variant="h6" mb={1}>
+          {props.name}
+        </Typography>
         <Typography
           variant="body1"
           alignItems="center"
           component="div"
           display="flex"
         >
-          <PinDropRoundedIcon />
+          <PinDropRoundedIcon sx={{ paddingRight: 1 }} />
           {props.address.district}
         </Typography>
       </CardContent>

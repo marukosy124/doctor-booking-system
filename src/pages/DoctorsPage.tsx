@@ -9,23 +9,28 @@ import {
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import { useState, ChangeEvent, useEffect, KeyboardEvent } from 'react';
 import { useQueries } from 'react-query';
-import { getDoctorById, getDoctors } from '../api';
-import { IDoctor } from '../types/DoctorTypes';
+import { getBookings, getDoctorById, getDoctors } from '../api';
+import { IDoctor, IDoctorWithFullAddress } from '../types/DoctorTypes';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
-import DoctorCard from '../components/DoctorCard';
+import DoctorAccordion from '../components/DoctorAccordion';
 
-const DoctorsPage: React.FC = () => {
+const DoctorsPage: React.FC = (props) => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const id = searchParams.get('id') ?? '';
   const queryString = searchParams.get('q') ?? '';
 
   const [searchQuery, setSearchQuery] = useState<string>(queryString);
-  const [doctors, setDoctors] = useState<IDoctor[]>([]);
+  const [doctors, setDoctors] = useState<IDoctorWithFullAddress[]>([]);
 
   const [
     { isFetching: isDoctorsFetching, refetch: refetchDoctors },
     { isFetching: isDoctorFetching, refetch: refetchDoctor },
+    {
+      data: bookings,
+      isFetching: isBookingsFetching,
+      refetch: refetchBookings,
+    },
   ] = useQueries([
     {
       queryKey: ['doctors'],
@@ -34,15 +39,24 @@ const DoctorsPage: React.FC = () => {
       retry: false,
       enabled: !Boolean(id),
       onSuccess: (data: IDoctor[]) => {
-        let filteredDoctors = [...data];
+        let filteredDoctors = [...data].map((doctor) => ({
+          ...doctor,
+          fullAddress: doctor.address.line_1.concat(
+            ', ',
+            doctor.address.line_2,
+            ', ',
+            doctor.address.district
+          ),
+        }));
         if (queryString) {
-          filteredDoctors = filteredDoctors.filter(
-            (doctor) =>
-              doctor.name.toLowerCase().includes(queryString.toLowerCase()) ||
-              doctor.description
-                .toLowerCase()
-                .includes(queryString.toLowerCase())
-          );
+          const qs = queryString.toLowerCase();
+          filteredDoctors = filteredDoctors.filter((doctor) => {
+            return (
+              doctor.name.toLowerCase().includes(qs) ||
+              doctor.description.toLowerCase().includes(qs) ||
+              doctor.fullAddress.includes(qs)
+            );
+          });
         }
         setDoctors(filteredDoctors);
       },
@@ -53,9 +67,24 @@ const DoctorsPage: React.FC = () => {
       refetchOnWindowFocus: false,
       enabled: Boolean(id),
       onSuccess: (data: IDoctor) => {
-        setDoctors([data]);
+        setDoctors([
+          {
+            ...data,
+            fullAddress: data.address.line_1.concat(
+              ', ',
+              data.address.line_2,
+              ', ',
+              data.address.district
+            ),
+          },
+        ]);
         setSearchQuery(data.name);
       },
+    },
+    {
+      queryKey: ['bookings'],
+      queryFn: getBookings,
+      refetchOnWindowFocus: false,
     },
   ]);
 
@@ -64,6 +93,7 @@ const DoctorsPage: React.FC = () => {
       refetchDoctor();
     } else {
       refetchDoctors();
+      setSearchQuery(queryString);
     }
   }, [id, queryString]);
 
@@ -104,6 +134,7 @@ const DoctorsPage: React.FC = () => {
           justifyContent="center"
           height={400}
           alignItems="center"
+          paddingTop={3}
         >
           {isDoctorFetching || isDoctorsFetching ? (
             <CircularProgress />
@@ -112,7 +143,12 @@ const DoctorsPage: React.FC = () => {
               {doctors.length > 0 ? (
                 <>
                   {doctors.map((doctor) => (
-                    <DoctorCard {...doctor} />
+                    <DoctorAccordion
+                      key={doctor.id}
+                      doctor={doctor}
+                      isExpand={id === doctor.id}
+                      bookings={bookings ?? []}
+                    />
                   ))}
                 </>
               ) : (

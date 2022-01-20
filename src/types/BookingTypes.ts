@@ -1,13 +1,11 @@
-enum Status {
-  'cancel',
-  'confirmed',
-}
-
-export interface IBooking {
-  id: string;
+export interface INewBooking {
   name: string;
   start: number;
   doctorId: string;
   date: string;
-  status: Status;
+}
+
+export interface IBooking extends INewBooking {
+  id: string;
+  status: 'cancelled' | 'confirmed';
 }

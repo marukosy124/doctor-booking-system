@@ -13,6 +13,7 @@ import { getBookings, getDoctorById, getDoctors } from '../api';
 import { IDoctor, IDoctorWithFullAddress } from '../types/DoctorTypes';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import DoctorAccordion from '../components/DoctorAccordion';
+import { IBooking } from '../types/BookingTypes';
 
 const DoctorsPage: React.FC = (props) => {
   const navigate = useNavigate();
@@ -22,15 +23,12 @@ const DoctorsPage: React.FC = (props) => {
 
   const [searchQuery, setSearchQuery] = useState<string>(queryString);
   const [doctors, setDoctors] = useState<IDoctorWithFullAddress[]>([]);
+  const [bookings, setBookings] = useState<IBooking[]>([]);
 
   const [
     { isFetching: isDoctorsFetching, refetch: refetchDoctors },
     { isFetching: isDoctorFetching, refetch: refetchDoctor },
-    {
-      data: bookings,
-      isFetching: isBookingsFetching,
-      refetch: refetchBookings,
-    },
+    { isFetching: isBookingsFetching, refetch: refetchBookings },
   ] = useQueries([
     {
       queryKey: ['doctors'],
@@ -54,7 +52,7 @@ const DoctorsPage: React.FC = (props) => {
             return (
               doctor.name.toLowerCase().includes(qs) ||
               doctor.description.toLowerCase().includes(qs) ||
-              doctor.fullAddress.includes(qs)
+              doctor.fullAddress.toLowerCase().includes(qs)
             );
           });
         }
@@ -85,6 +83,12 @@ const DoctorsPage: React.FC = (props) => {
       queryKey: ['bookings'],
       queryFn: getBookings,
       refetchOnWindowFocus: false,
+      onSuccess: (data: IBooking[]) => {
+        const confirmedBookings = [...data].filter(
+          (booking) => booking.status === 'confirmed'
+        );
+        setBookings(confirmedBookings);
+      },
     },
   ]);
 
@@ -147,7 +151,7 @@ const DoctorsPage: React.FC = (props) => {
                       key={doctor.id}
                       doctor={doctor}
                       isExpand={id === doctor.id}
-                      bookings={bookings ?? []}
+                      bookings={bookings}
                     />
                   ))}
                 </>

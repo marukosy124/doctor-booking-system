@@ -16,12 +16,14 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import DoctorIcon from '../images/doctor.png';
 import MapsHomeWorkIcon from '@mui/icons-material/MapsHomeWork';
 import CommentIcon from '@mui/icons-material/Comment';
-import { useEffect, useState } from 'react';
+import { ChangeEvent, useEffect, useState } from 'react';
 import AdapterDateFns from '@mui/lab/AdapterDateFns';
 import LocalizationProvider from '@mui/lab/LocalizationProvider';
 import CalendarPicker from '@mui/lab/CalendarPicker';
 import { addDays, format, getDay } from 'date-fns';
-import { IBooking } from '../types/BookingTypes';
+import { IBooking, INewBooking } from '../types/BookingTypes';
+import { useMutation } from 'react-query';
+import { createBooking } from '../api';
 
 const CHOOSABLE_DAYS_LENGTH = 10;
 
@@ -39,6 +41,8 @@ const DoctorAccordion: React.FC<DoctorAccordionProps> = (props) => {
   const [inavailableTimes, setInavailableTimes] = useState<string[]>([]);
   const [possibleTimes, setPossibleTimes] = useState<string[]>([]);
   const [bookings, setBookings] = useState<IBooking[]>([]);
+  const [name, setName] = useState<string>('');
+  const [isEmpty, setIsEmpty] = useState<boolean>(false);
 
   /*******************************************************************
    * notice that opening hours time are string in 24-hr format already
@@ -49,13 +53,42 @@ const DoctorAccordion: React.FC<DoctorAccordionProps> = (props) => {
     const factor = type === 'booking' ? 60 : 100;
     let h = String(Math.floor(time));
     let m = String((time - Math.floor(time)) * factor);
-    if (Math.floor(time) < 10) {
+    if (Number(h) < 10) {
       h = `0${h}`;
     }
-    if (m === '0') {
-      m = '00';
+    if (Number(m) < 10) {
+      m = `0${m}`;
     }
     return `${h}:${m}`;
+  };
+
+  const convertToFloat = (timeString: string) => {
+    const [h, m] = timeString.split(':').map((digit) => Number(digit));
+    const decimalPlace = Number((m / 60).toFixed(1));
+    return h + decimalPlace;
+  };
+
+  // check if the times are equal or overlapped (in case custom time inputted from backend or db)
+  const checkTimeAvailability = (
+    currentTime: string,
+    nextBookedTime: string
+  ) => {
+    const [currentTimeH, currentTimeM] = currentTime
+      .split(':')
+      .map((digit) => Number(digit));
+    const [nextBookedTimeH, nextBookedTimeM] = nextBookedTime
+      .split(':')
+      .map((digit) => Number(digit));
+    if (currentTimeH + 1 === nextBookedTimeH) {
+      return false;
+    } else if (
+      currentTimeM <= nextBookedTimeM ||
+      (nextBookedTimeM === 0 && currentTimeH < nextBookedTimeH)
+    ) {
+      return false;
+    } else {
+      return true;
+    }
   };
 
   useEffect(() => {
@@ -112,8 +145,8 @@ const DoctorAccordion: React.FC<DoctorAccordionProps> = (props) => {
         )?.end
       );
 
-      // get all inavailable start time according to all bookings of this doctor
-      const inavailableStartTimes = bookings
+      // get all booked start time of this doctor
+      const bookedTimes = bookings
         .filter((booking) => booking.date === formattedDate)
         .map((filteredBooking) =>
           convertToTimeString(filteredBooking.start, 'booking')
@@ -122,22 +155,57 @@ const DoctorAccordion: React.FC<DoctorAccordionProps> = (props) => {
       // generate all possible times
       let possibleTimes = [];
       if (startTime && endTime) {
-        for (let t = startTime; t <= endTime; t++) {
+        for (let t = startTime; t < endTime; t++) {
           possibleTimes.push(convertToTimeString(t, 'openingHours'));
         }
       }
 
+      // get all crashed times for disabling time slot
+      let crashedTimes: string[] = [];
+      possibleTimes.forEach((currentTime) => {
+        const isInavailable = bookedTimes.some((bookedTime) => {
+          return !checkTimeAvailability(currentTime, bookedTime);
+        });
+        if (isInavailable) {
+          crashedTimes.push(currentTime);
+        }
+      });
+
       // get and set the first available time within the possible times
       const firstAvailableTime = possibleTimes.filter(
-        (t) => !inavailableStartTimes.includes(t)
+        (t) => !crashedTimes.includes(t)
       )[0];
       setTime(firstAvailableTime ?? '');
 
       // set possible and inavailable times
       setPossibleTimes(possibleTimes);
-      setInavailableTimes(inavailableStartTimes);
+      setInavailableTimes(crashedTimes);
     }
-  }, [date]);
+  }, [date, bookings]);
+
+  const createMutation = useMutation(createBooking, {
+    onSuccess: (data) => {
+      console.log(data);
+    },
+    onError: (error) => {
+      console.log(error);
+    },
+  });
+
+  const handleSubmit = () => {
+    if (!name) {
+      setIsEmpty(true);
+    } else if (date) {
+      setIsEmpty(false);
+      const bookingRequest = {
+        name: name,
+        doctorId: props.doctor.id,
+        start: convertToFloat(time),
+        date: format(date, 'yyyy-MM-dd'),
+      };
+      createMutation.mutate(bookingRequest);
+    }
+  };
 
   return (
     <Accordion
@@ -146,6 +214,7 @@ const DoctorAccordion: React.FC<DoctorAccordionProps> = (props) => {
       onChange={(event: React.SyntheticEvent, expanded: boolean) =>
         setIsExpand(expanded)
       }
+      TransitionProps={{ mountOnEnter: true }}
     >
       <AccordionSummary
         expandIcon={<ExpandMoreIcon />}
@@ -191,10 +260,13 @@ const DoctorAccordion: React.FC<DoctorAccordionProps> = (props) => {
             <Grid item xs={12} md={7}>
               <Grid container flexDirection="column">
                 <TextField
+                  error={isEmpty}
+                  helperText="Please input your name"
                   label="Your Name"
                   variant="standard"
                   sx={{ mb: 5 }}
                   fullWidth
+                  onChange={(e) => setName(e.target.value)}
                 />
                 <FormControl fullWidth>
                   <InputLabel>Booking Time</InputLabel>
@@ -202,7 +274,7 @@ const DoctorAccordion: React.FC<DoctorAccordionProps> = (props) => {
                     value={time}
                     placeholder="Select a Booking Time"
                     label="Booking Time"
-                    onChange={(value) => console.log(value)}
+                    onChange={(e) => setTime(e.target.value)}
                   >
                     {possibleTimes.map((time) => (
                       <MenuItem
@@ -215,7 +287,11 @@ const DoctorAccordion: React.FC<DoctorAccordionProps> = (props) => {
                     ))}
                   </Select>
                 </FormControl>
-                <Button variant="contained" sx={{ my: 5, borderRadius: 10 }}>
+                <Button
+                  variant="contained"
+                  sx={{ my: 5, borderRadius: 10 }}
+                  onClick={handleSubmit}
+                >
                   Confirm
                 </Button>
               </Grid>

@@ -1,5 +1,5 @@
 import axios from './config/axios';
-import { IBooking, INewBooking } from './types/BookingTypes';
+import { IBooking, INewBooking, IUpdateBooking } from './types/BookingTypes';
 import { IDoctor } from './types/DoctorTypes';
 
 export const getDoctors = (): Promise<IDoctor[]> => {
@@ -18,14 +18,9 @@ export const getBookingById = (bookingId: string): Promise<IBooking> => {
   return axios.get(`/booking/${bookingId}`).then((res: any) => res.data);
 };
 
-export const createBooking = (booking: any): Promise<IBooking> => {
+export const createBooking = (booking: INewBooking): Promise<IBooking> => {
   return axios.post('/booking', booking).then((res: any) => res.data);
 };
-
-interface IUpdateBooking {
-  bookingId: string;
-  status: string;
-}
 
 export const updateBooking = ({
   bookingId,

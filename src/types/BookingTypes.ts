@@ -20,6 +20,11 @@ export interface IFormattedBooking {
   date: string;
 }
 
+export interface IUpdateBooking {
+  bookingId: string;
+  status: string;
+}
+
 export interface ISnackbarStatus {
   isOpen: boolean;
   message: string;

@@ -65,7 +65,7 @@ const DoctorAccordion: React.FC<DoctorAccordionProps> = (props) => {
     ) {
       // convert to string to ensure it is static forever
       const formattedDate = format(day, 'yyyy-MM-dd');
-      if (formattedDate) dates.push({ date: formattedDate, day: getDay(day) });
+      dates.push({ date: formattedDate, day: getDay(day) });
     }
 
     // get all inavailable days (of the week) according to doctor's opening hrs
@@ -90,7 +90,7 @@ const DoctorAccordion: React.FC<DoctorAccordionProps> = (props) => {
       // formate the date to enhance data comparison
       const formattedDate = format(date, 'yyyy-MM-dd');
 
-      // convert current time to floar
+      // convert current time to float
       const currentTime = convertToFloat(format(new Date(), 'HH:mm'), ':');
 
       // get day of the week of the selected date
@@ -145,6 +145,11 @@ const DoctorAccordion: React.FC<DoctorAccordionProps> = (props) => {
         (t) => !crashedTimes.includes(t)
       )[0];
       setTime(firstAvailableTime ?? '');
+
+      // if current time has passed end time and the selected day is today -> date jump to next day
+      if (currentTime >= endTime && formattedDate === today) {
+        setDate(addDays(new Date(), 1));
+      }
 
       // set possible and inavailable times
       setPossibleTimes(possibleTimesString);

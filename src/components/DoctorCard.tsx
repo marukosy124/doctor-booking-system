@@ -16,7 +16,6 @@ const DoctorCard: React.FC<PropsType> = (props) => {
   return (
     <Card
       sx={{
-        maxWidth: 400,
         height: 300,
         m: '1rem',
       }}

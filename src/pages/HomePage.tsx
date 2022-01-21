@@ -51,7 +51,7 @@ const HomePage: React.FC = () => {
   };
 
   return (
-    <Container sx={{ p: 2, mx: 'auto' }}>
+    <Container sx={{ p: 2, mx: 'auto' }} maxWidth={false}>
       <Typography variant="h4" fontWeight="bold" textAlign="center" py={5}>
         Find your doctor and make a booking
       </Typography>

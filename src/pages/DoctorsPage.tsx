@@ -14,6 +14,7 @@ import { IDoctor, IDoctorWithFullAddress } from '../types/DoctorTypes';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import DoctorAccordion from '../components/DoctorAccordion';
 import { IBooking } from '../types/BookingTypes';
+import { formatDoctorProfile } from '../utils/helpers';
 
 const DoctorsPage: React.FC = (props) => {
   const navigate = useNavigate();
@@ -28,7 +29,6 @@ const DoctorsPage: React.FC = (props) => {
   const [
     { isFetching: isDoctorsFetching, refetch: refetchDoctors },
     { isFetching: isDoctorFetching, refetch: refetchDoctor },
-    { isFetching: isBookingsFetching, refetch: refetchBookings },
   ] = useQueries([
     {
       queryKey: ['doctors'],
@@ -37,15 +37,9 @@ const DoctorsPage: React.FC = (props) => {
       retry: false,
       enabled: !Boolean(id),
       onSuccess: (data: IDoctor[]) => {
-        let filteredDoctors = [...data].map((doctor) => ({
-          ...doctor,
-          fullAddress: doctor.address.line_1.concat(
-            ', ',
-            doctor.address.line_2,
-            ', ',
-            doctor.address.district
-          ),
-        }));
+        let filteredDoctors = [...data].map((doctor) =>
+          formatDoctorProfile(doctor)
+        );
         if (queryString) {
           const qs = queryString.toLowerCase();
           filteredDoctors = filteredDoctors.filter((doctor) => {
@@ -65,17 +59,7 @@ const DoctorsPage: React.FC = (props) => {
       refetchOnWindowFocus: false,
       enabled: Boolean(id),
       onSuccess: (data: IDoctor) => {
-        setDoctors([
-          {
-            ...data,
-            fullAddress: data.address.line_1.concat(
-              ', ',
-              data.address.line_2,
-              ', ',
-              data.address.district
-            ),
-          },
-        ]);
+        setDoctors([formatDoctorProfile(data)]);
         setSearchQuery(data.name);
       },
     },
@@ -109,7 +93,7 @@ const DoctorsPage: React.FC = (props) => {
 
   return (
     <>
-      <Container sx={{ p: 2, mx: 'auto' }}>
+      <Container sx={{ p: 2, mx: 'auto' }} maxWidth={false}>
         <TextField
           value={searchQuery}
           onChange={(e: ChangeEvent<HTMLInputElement>) =>

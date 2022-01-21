@@ -11,9 +11,9 @@ import { IDoctor, IDoctorWithFullAddress } from '../types/DoctorTypes';
 import { useEffect, useState } from 'react';
 import { useMutation, useQuery } from 'react-query';
 import { getBookingById, getDoctors, updateBooking } from '../api';
-import BookingAccordion from '../components/BookingCard';
 import { IFormattedBooking, ISnackbarStatus } from '../types/BookingTypes';
 import { convertToTimeString } from '../utils/helpers';
+import BookingCard from '../components/BookingCard';
 
 const BookingsPage = () => {
   const [doctors, setDoctors] = useState<IDoctorWithFullAddress[]>([]);
@@ -97,7 +97,7 @@ const BookingsPage = () => {
   };
 
   return (
-    <Container sx={{ p: 2, mx: 'auto' }}>
+    <Container sx={{ p: 2, mx: 'auto' }} maxWidth={false}>
       <Typography variant="h5" pb={4}>
         Your Bookings
       </Typography>
@@ -112,10 +112,10 @@ const BookingsPage = () => {
           <CircularProgress />
         </Box>
       ) : (
-        <Grid container>
+        <Grid container spacing={3}>
           {bookings.map((booking) => (
             <Grid item xs={12} sm={6} md={4} key={booking.id}>
-              <BookingAccordion
+              <BookingCard
                 doctor={findDoctorByBooking(booking)}
                 booking={booking}
                 isLoading={isLoading}

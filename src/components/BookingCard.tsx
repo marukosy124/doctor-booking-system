@@ -8,7 +8,6 @@ import {
 } from '@mui/material';
 import { IDoctorWithFullAddress } from '../types/DoctorTypes';
 import MapsHomeWorkIcon from '@mui/icons-material/MapsHomeWork';
-import CommentIcon from '@mui/icons-material/Comment';
 import AccessTimeFilledOutlinedIcon from '@mui/icons-material/AccessTimeFilledOutlined';
 import { LoadingButton } from '@mui/lab';
 import CheckCircleOutlineOutlinedIcon from '@mui/icons-material/CheckCircleOutlineOutlined';
@@ -24,7 +23,7 @@ interface BookingCardProps {
 
 const BookingCard: React.FC<BookingCardProps> = (props) => {
   return (
-    <Card sx={{ maxWidth: 345 }}>
+    <Card>
       <CardHeader
         sx={{
           backgroundColor:
@@ -38,7 +37,7 @@ const BookingCard: React.FC<BookingCardProps> = (props) => {
           )
         }
         title={props.doctor.name}
-        subheader={`Registered name: ${props.booking.name}`}
+        subheader={`Your booking name: ${props.booking.name}`}
       />
       <CardContent>
         <Typography variant="body1" component="div" display="flex" pb={1}>
@@ -49,12 +48,6 @@ const BookingCard: React.FC<BookingCardProps> = (props) => {
           <MapsHomeWorkIcon sx={{ paddingRight: 1 }} />
           {props.doctor.fullAddress}
         </Typography>
-        {props.doctor.description && (
-          <Typography variant="body1" component="div" display="flex" pb={1}>
-            <CommentIcon sx={{ paddingRight: 1 }} />
-            {props.doctor.description}
-          </Typography>
-        )}
       </CardContent>
       <CardActions sx={{ display: 'flex', justifyContent: 'flex-end' }}>
         {props.booking.status === 'confirmed' ? (

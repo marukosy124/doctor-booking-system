@@ -22,11 +22,12 @@ import AdapterDateFns from '@mui/lab/AdapterDateFns';
 import LocalizationProvider from '@mui/lab/LocalizationProvider';
 import CalendarPicker from '@mui/lab/CalendarPicker';
 import { addDays, format, getDay } from 'date-fns';
-import { IBooking, ISnackbarStatus } from '../types/BookingTypes';
+import { IBooking } from '../types/BookingTypes';
 import { useMutation } from 'react-query';
 import { createBooking } from '../api';
 import { LoadingButton } from '@mui/lab';
 import { useNavigate } from 'react-router-dom';
+import { convertToFloat, convertToTimeString } from '../utils/helpers';
 
 const CHOOSABLE_DAYS_LENGTH = 10;
 
@@ -48,34 +49,7 @@ const DoctorAccordion: React.FC<DoctorAccordionProps> = (props) => {
   const [bookings, setBookings] = useState<IBooking[]>(props.bookings);
   const [name, setName] = useState<string>('');
   const [isEmpty, setIsEmpty] = useState<boolean>(false);
-  const [snackbarStatus, setSnackbarStatus] = useState<ISnackbarStatus>({
-    isOpen: false,
-    message: '',
-    status: undefined,
-  });
-
-  /*******************************************************************
-   * notice that opening hours time are string in 24-hr format already
-   * while booking time is floating number
-   ******************************************************************/
-  // convert floating time to 24-hr formatted string
-  const convertToTimeString = (time: number) => {
-    let h = String(Math.floor(time));
-    let m = String(Math.floor((time - Math.floor(time)) * 60));
-    if (Number(h) < 10) {
-      h = `0${h}`;
-    }
-    if (Number(m) < 10) {
-      m = `0${m}`;
-    }
-    return `${h}:${m}`;
-  };
-
-  const convertToFloat = (timeString: string, indicator: string) => {
-    const [h, m] = timeString.split(indicator).map((digit) => Number(digit));
-    const decimalPlace = Number(m / 60);
-    return h + decimalPlace;
-  };
+  const [error, setError] = useState<string>('');
 
   const computeDates = () => {
     /*******************************************************************
@@ -195,12 +169,7 @@ const DoctorAccordion: React.FC<DoctorAccordionProps> = (props) => {
 
   const createMutation = useMutation(createBooking, {
     onSuccess: (data) => {
-      setSnackbarStatus({
-        isOpen: true,
-        message: 'Your booking has been registered successfully!',
-        status: 'success',
-      });
-
+      // store booking in localstorage
       const bookingHistory = localStorage.getItem('bookings');
       if (!bookingHistory) {
         localStorage.setItem('bookings', JSON.stringify([data.id]));
@@ -213,14 +182,10 @@ const DoctorAccordion: React.FC<DoctorAccordionProps> = (props) => {
         );
       }
 
-      navigate(`/bookings?id=${data.id}`);
+      navigate(`/bookings`);
     },
     onError: (error: any) => {
-      setSnackbarStatus({
-        isOpen: true,
-        message: error.response.data,
-        status: 'error',
-      });
+      setError(error.response.data);
     },
   });
 
@@ -340,22 +305,12 @@ const DoctorAccordion: React.FC<DoctorAccordionProps> = (props) => {
 
       <Snackbar
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        open={snackbarStatus.isOpen}
-        onClose={() =>
-          setSnackbarStatus({
-            isOpen: false,
-            message: '',
-            status: undefined,
-          })
-        }
+        open={Boolean(error)}
+        onClose={() => setError('')}
         autoHideDuration={3000}
         key="test"
       >
-        {snackbarStatus.status && (
-          <Alert severity={snackbarStatus.status}>
-            {snackbarStatus.message}
-          </Alert>
-        )}
+        <Alert severity="error">{error}</Alert>
       </Snackbar>
     </>
   );

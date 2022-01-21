@@ -10,6 +10,16 @@ export interface IBooking extends INewBooking {
   status: 'cancelled' | 'confirmed';
 }
 
+export interface IFormattedBooking {
+  id: string;
+  status: 'cancelled' | 'confirmed';
+  name: string;
+  start: string;
+  end: string;
+  doctorId: string;
+  date: string;
+}
+
 export interface ISnackbarStatus {
   isOpen: boolean;
   message: string;

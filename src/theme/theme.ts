@@ -32,5 +32,12 @@ export const customTheme = createTheme({
         },
       },
     },
+    MuiAccordionSummary: {
+      styleOverrides: {
+        root: {
+          userSelect: 'auto',
+        },
+      },
+    },
   },
 });

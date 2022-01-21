@@ -14,6 +14,6 @@ export const getBookings = (): Promise<IBooking[]> => {
   return axios.get('/booking').then((res: any) => res.data);
 };
 
-export const createBooking = (booking: INewBooking): Promise<IBooking> => {
+export const createBooking = (booking: any): Promise<IBooking> => {
   return axios.post('/booking', booking).then((res: any) => res.data);
 };

@@ -1,6 +1,5 @@
 import {
   Typography,
-  Button,
   Accordion,
   AccordionDetails,
   AccordionSummary,
@@ -10,20 +9,24 @@ import {
   MenuItem,
   Select,
   TextField,
+  Snackbar,
+  Alert,
 } from '@mui/material';
 import { Day, IDoctorWithFullAddress } from '../types/DoctorTypes';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import DoctorIcon from '../images/doctor.png';
 import MapsHomeWorkIcon from '@mui/icons-material/MapsHomeWork';
 import CommentIcon from '@mui/icons-material/Comment';
-import { ChangeEvent, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import AdapterDateFns from '@mui/lab/AdapterDateFns';
 import LocalizationProvider from '@mui/lab/LocalizationProvider';
 import CalendarPicker from '@mui/lab/CalendarPicker';
 import { addDays, format, getDay } from 'date-fns';
-import { IBooking, INewBooking } from '../types/BookingTypes';
+import { IBooking, ISnackbarStatus } from '../types/BookingTypes';
 import { useMutation } from 'react-query';
 import { createBooking } from '../api';
+import { LoadingButton } from '@mui/lab';
+import { useNavigate } from 'react-router-dom';
 
 const CHOOSABLE_DAYS_LENGTH = 10;
 
@@ -34,25 +37,31 @@ interface DoctorAccordionProps {
 }
 
 const DoctorAccordion: React.FC<DoctorAccordionProps> = (props) => {
+  const navigate = useNavigate();
+
   const [date, setDate] = useState<Date | null>(new Date());
   const [time, setTime] = useState<string>('');
   const [isExpand, setIsExpand] = useState<boolean>(props.isExpand);
   const [inavailableDates, setInavailableDates] = useState<string[]>([]);
   const [inavailableTimes, setInavailableTimes] = useState<string[]>([]);
   const [possibleTimes, setPossibleTimes] = useState<string[]>([]);
-  const [bookings, setBookings] = useState<IBooking[]>([]);
+  const [bookings, setBookings] = useState<IBooking[]>(props.bookings);
   const [name, setName] = useState<string>('');
   const [isEmpty, setIsEmpty] = useState<boolean>(false);
+  const [snackbarStatus, setSnackbarStatus] = useState<ISnackbarStatus>({
+    isOpen: false,
+    message: '',
+    status: undefined,
+  });
 
   /*******************************************************************
    * notice that opening hours time are string in 24-hr format already
    * while booking time is floating number
    ******************************************************************/
   // convert floating time to 24-hr formatted string
-  const convertToTimeString = (time: number, type: string) => {
-    const factor = type === 'booking' ? 60 : 100;
+  const convertToTimeString = (time: number) => {
     let h = String(Math.floor(time));
-    let m = String((time - Math.floor(time)) * factor);
+    let m = String(Math.floor((time - Math.floor(time)) * 60));
     if (Number(h) < 10) {
       h = `0${h}`;
     }
@@ -62,36 +71,13 @@ const DoctorAccordion: React.FC<DoctorAccordionProps> = (props) => {
     return `${h}:${m}`;
   };
 
-  const convertToFloat = (timeString: string) => {
-    const [h, m] = timeString.split(':').map((digit) => Number(digit));
-    const decimalPlace = Number((m / 60).toFixed(1));
+  const convertToFloat = (timeString: string, indicator: string) => {
+    const [h, m] = timeString.split(indicator).map((digit) => Number(digit));
+    const decimalPlace = Number(m / 60);
     return h + decimalPlace;
   };
 
-  // check if the times are equal or overlapped (in case custom time inputted from backend or db)
-  const checkTimeAvailability = (
-    currentTime: string,
-    nextBookedTime: string
-  ) => {
-    const [currentTimeH, currentTimeM] = currentTime
-      .split(':')
-      .map((digit) => Number(digit));
-    const [nextBookedTimeH, nextBookedTimeM] = nextBookedTime
-      .split(':')
-      .map((digit) => Number(digit));
-    if (currentTimeH + 1 === nextBookedTimeH) {
-      return false;
-    } else if (
-      currentTimeM <= nextBookedTimeM ||
-      (nextBookedTimeM === 0 && currentTimeH < nextBookedTimeH)
-    ) {
-      return false;
-    } else {
-      return true;
-    }
-  };
-
-  useEffect(() => {
+  const computeDates = () => {
     /*******************************************************************
      * notice that day of the week is converted to number
      ******************************************************************/
@@ -116,79 +102,125 @@ const DoctorAccordion: React.FC<DoctorAccordionProps> = (props) => {
     // get and set all inavailable days within the possible dates
     dates = dates.filter((d) => inavailableDays.includes(d.day));
     setInavailableDates(dates.map((d) => d.date));
-  }, [props.doctor]);
+  };
 
-  useEffect(() => {
+  const computeBookings = () => {
     const filteredBookings = props.bookings.filter(
       (booking) => booking.doctorId === props.doctor.id
     );
     setBookings(filteredBookings);
-  }, [props.bookings]);
+  };
 
-  useEffect(() => {
-    if (date) {
+  const computeTimes = () => {
+    if (date && props.bookings && props.doctor) {
       // formate the date to enhance data comparison
       const formattedDate = format(date, 'yyyy-MM-dd');
+
+      // convert current time to floar
+      const currentTime = convertToFloat(format(new Date(), 'HH:mm'), ':');
 
       // get day of the week of the selected date
       const dayOfSelectedDate = date.getDay();
 
-      // get start time and end time of the selected date (converted to number for computation)
-      const startTime = Number(
+      const startTime = convertToFloat(
         props.doctor.opening_hours.find(
           (hr) => Number(Day[hr.day]) === dayOfSelectedDate
-        )?.start
+        )?.start ?? '',
+        '.'
       );
-      const endTime = Number(
+      const endTime = convertToFloat(
         props.doctor.opening_hours.find(
           (hr) => Number(Day[hr.day]) === dayOfSelectedDate
-        )?.end
+        )?.end ?? '',
+        '.'
       );
 
       // get all booked start time of this doctor
       const bookedTimes = bookings
         .filter((booking) => booking.date === formattedDate)
-        .map((filteredBooking) =>
-          convertToTimeString(filteredBooking.start, 'booking')
-        );
+        .map((filteredBooking) => filteredBooking.start);
 
-      // generate all possible times
+      // generate all possible times in float
       let possibleTimes = [];
       if (startTime && endTime) {
         for (let t = startTime; t < endTime; t++) {
-          possibleTimes.push(convertToTimeString(t, 'openingHours'));
+          possibleTimes.push(t);
         }
       }
 
       // get all crashed times for disabling time slot
       let crashedTimes: string[] = [];
-      possibleTimes.forEach((currentTime) => {
-        const isInavailable = bookedTimes.some((bookedTime) => {
-          return !checkTimeAvailability(currentTime, bookedTime);
-        });
+      const today = format(new Date(), 'yyyy-MM-dd');
+      possibleTimes.forEach((time) => {
+        const isInavailable =
+          bookedTimes.some((bookedTime) => {
+            return time >= bookedTime && time < bookedTime + 1;
+          }) ||
+          (time <= currentTime && formattedDate === today);
         if (isInavailable) {
-          crashedTimes.push(currentTime);
+          crashedTimes.push(convertToTimeString(time));
         }
       });
 
+      // convert all possible times to time string
+      const possibleTimesString = possibleTimes.map((time) =>
+        convertToTimeString(time)
+      );
       // get and set the first available time within the possible times
-      const firstAvailableTime = possibleTimes.filter(
+      const firstAvailableTime = possibleTimesString.filter(
         (t) => !crashedTimes.includes(t)
       )[0];
       setTime(firstAvailableTime ?? '');
 
       // set possible and inavailable times
-      setPossibleTimes(possibleTimes);
+      setPossibleTimes(possibleTimesString);
       setInavailableTimes(crashedTimes);
     }
-  }, [date, bookings]);
+  };
+
+  useEffect(() => {
+    if (isExpand) {
+      computeDates();
+      computeTimes();
+      computeBookings();
+    }
+  }, [isExpand, props.bookings, props.doctor]);
+
+  useEffect(() => {
+    if (isExpand) {
+      computeDates();
+      computeTimes();
+    }
+  }, [date]);
 
   const createMutation = useMutation(createBooking, {
     onSuccess: (data) => {
-      console.log(data);
+      setSnackbarStatus({
+        isOpen: true,
+        message: 'Your booking has been registered successfully!',
+        status: 'success',
+      });
+
+      const bookingHistory = localStorage.getItem('bookings');
+      if (!bookingHistory) {
+        localStorage.setItem('bookings', JSON.stringify([data.id]));
+      } else {
+        const newBookingHistory = new Set(JSON.parse(bookingHistory));
+        newBookingHistory.add(data.id);
+        localStorage.setItem(
+          'bookings',
+          JSON.stringify(Array.from(newBookingHistory))
+        );
+      }
+
+      navigate(`/bookings?id=${data.id}`);
     },
-    onError: (error) => {
-      console.log(error);
+    onError: (error: any) => {
+      setSnackbarStatus({
+        isOpen: true,
+        message: error.response.data,
+        status: 'error',
+      });
     },
   });
 
@@ -200,7 +232,7 @@ const DoctorAccordion: React.FC<DoctorAccordionProps> = (props) => {
       const bookingRequest = {
         name: name,
         doctorId: props.doctor.id,
-        start: convertToFloat(time),
+        start: convertToFloat(time, ':'),
         date: format(date, 'yyyy-MM-dd'),
       };
       createMutation.mutate(bookingRequest);
@@ -208,98 +240,124 @@ const DoctorAccordion: React.FC<DoctorAccordionProps> = (props) => {
   };
 
   return (
-    <Accordion
-      sx={{ mb: '2rem' }}
-      expanded={isExpand}
-      onChange={(event: React.SyntheticEvent, expanded: boolean) =>
-        setIsExpand(expanded)
-      }
-      TransitionProps={{ mountOnEnter: true }}
-    >
-      <AccordionSummary
-        expandIcon={<ExpandMoreIcon />}
-        aria-controls="panel1a-content"
+    <>
+      <Accordion
+        sx={{ mb: '2rem' }}
+        expanded={isExpand}
+        onChange={(event: React.SyntheticEvent, expanded: boolean) =>
+          setIsExpand(expanded)
+        }
+        TransitionProps={{ mountOnEnter: true }}
       >
-        <img
-          src={DoctorIcon}
-          width={100}
-          height={100}
-          style={{ margin: '0.5rem 1rem 0.5rem 0' }}
-        />
-        <Grid container flexDirection="column" justifyContent="center">
-          <Typography variant="h6" mb={1}>
-            {props.doctor.name}
-          </Typography>
-          <Typography variant="body1" component="div" display="flex">
-            <MapsHomeWorkIcon sx={{ paddingRight: 1 }} />
-            {props.doctor.fullAddress}
-          </Typography>
-          {props.doctor.description && (
-            <Typography variant="body1" component="div" display="flex">
-              <CommentIcon sx={{ paddingRight: 1 }} />
-              {props.doctor.description}
+        <AccordionSummary
+          expandIcon={<ExpandMoreIcon />}
+          aria-controls="panel1a-content"
+        >
+          <img
+            src={DoctorIcon}
+            width={100}
+            height={100}
+            style={{ margin: '0.5rem 1rem 0.5rem 0' }}
+          />
+          <Grid container flexDirection="column" justifyContent="center">
+            <Typography variant="h6" mb={1}>
+              {props.doctor.name}
             </Typography>
-          )}
-        </Grid>
-      </AccordionSummary>
-      <AccordionDetails sx={{ backgroundColor: 'grey.100' }}>
-        <LocalizationProvider dateAdapter={AdapterDateFns}>
-          <Grid container alignItems="center" justifyContent="space-around">
-            <Grid item xs={12} md={5} justifyContent="center">
-              <CalendarPicker
-                minDate={new Date()}
-                maxDate={addDays(new Date(), CHOOSABLE_DAYS_LENGTH)}
-                date={date}
-                onChange={(newDate) => setDate(newDate)}
-                views={['day']}
-                shouldDisableDate={(date) =>
-                  inavailableDates.includes(format(date, 'yyyy-MM-dd'))
-                }
-              />
-            </Grid>
-            <Grid item xs={12} md={7}>
-              <Grid container flexDirection="column">
-                <TextField
-                  error={isEmpty}
-                  helperText="Please input your name"
-                  label="Your Name"
-                  variant="standard"
-                  sx={{ mb: 5 }}
-                  fullWidth
-                  onChange={(e) => setName(e.target.value)}
+            <Typography variant="body1" component="div" display="flex">
+              <MapsHomeWorkIcon sx={{ paddingRight: 1 }} />
+              {props.doctor.fullAddress}
+            </Typography>
+            {props.doctor.description && (
+              <Typography variant="body1" component="div" display="flex">
+                <CommentIcon sx={{ paddingRight: 1 }} />
+                {props.doctor.description}
+              </Typography>
+            )}
+          </Grid>
+        </AccordionSummary>
+        <AccordionDetails sx={{ backgroundColor: 'grey.100' }}>
+          <LocalizationProvider dateAdapter={AdapterDateFns}>
+            <Grid container alignItems="center" justifyContent="space-around">
+              <Grid item xs={12} md={5} justifyContent="center">
+                <CalendarPicker
+                  minDate={new Date()}
+                  maxDate={addDays(new Date(), CHOOSABLE_DAYS_LENGTH)}
+                  date={date}
+                  onChange={(newDate) => setDate(newDate)}
+                  views={['day']}
+                  shouldDisableDate={(date) =>
+                    inavailableDates.includes(format(date, 'yyyy-MM-dd'))
+                  }
+                  disabled={createMutation.isLoading}
                 />
-                <FormControl fullWidth>
-                  <InputLabel>Booking Time</InputLabel>
-                  <Select
-                    value={time}
-                    placeholder="Select a Booking Time"
-                    label="Booking Time"
-                    onChange={(e) => setTime(e.target.value)}
+              </Grid>
+              <Grid item xs={12} md={7}>
+                <Grid container flexDirection="column">
+                  <TextField
+                    error={isEmpty}
+                    helperText="Please input your name"
+                    label="Your Name"
+                    variant="standard"
+                    sx={{ mb: 5 }}
+                    fullWidth
+                    onChange={(e) => setName(e.target.value)}
+                    disabled={createMutation.isLoading}
+                  />
+                  <FormControl fullWidth>
+                    <InputLabel>Booking Time</InputLabel>
+                    <Select
+                      value={time}
+                      placeholder="Select a Booking Time"
+                      label="Booking Time"
+                      onChange={(e) => setTime(e.target.value)}
+                      disabled={createMutation.isLoading}
+                    >
+                      {possibleTimes.map((time) => (
+                        <MenuItem
+                          value={time}
+                          key={time}
+                          disabled={inavailableTimes.includes(time)}
+                        >
+                          {time}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                  <LoadingButton
+                    loading={createMutation.isLoading}
+                    variant="contained"
+                    sx={{ my: 5, borderRadius: 10 }}
+                    onClick={handleSubmit}
                   >
-                    {possibleTimes.map((time) => (
-                      <MenuItem
-                        value={time}
-                        key={time}
-                        disabled={inavailableTimes.includes(time)}
-                      >
-                        {time}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-                <Button
-                  variant="contained"
-                  sx={{ my: 5, borderRadius: 10 }}
-                  onClick={handleSubmit}
-                >
-                  Confirm
-                </Button>
+                    Confirm
+                  </LoadingButton>
+                </Grid>
               </Grid>
             </Grid>
-          </Grid>
-        </LocalizationProvider>
-      </AccordionDetails>
-    </Accordion>
+          </LocalizationProvider>
+        </AccordionDetails>
+      </Accordion>
+
+      <Snackbar
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        open={snackbarStatus.isOpen}
+        onClose={() =>
+          setSnackbarStatus({
+            isOpen: false,
+            message: '',
+            status: undefined,
+          })
+        }
+        autoHideDuration={3000}
+        key="test"
+      >
+        {snackbarStatus.status && (
+          <Alert severity={snackbarStatus.status}>
+            {snackbarStatus.message}
+          </Alert>
+        )}
+      </Snackbar>
+    </>
   );
 };
 

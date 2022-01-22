@@ -7,7 +7,6 @@ import {
   Alert,
   Snackbar,
 } from '@mui/material';
-import { IDoctor, IDoctorWithFullAddress } from '../types/DoctorTypes';
 import { useEffect, useState } from 'react';
 import { useMutation, useQuery } from 'react-query';
 import { getBookingById, getDoctors, updateBooking } from '../api';
@@ -16,7 +15,6 @@ import { convertToTimeString } from '../utils/helpers';
 import BookingCard from '../components/BookingCard';
 
 const BookingsPage = () => {
-  const [doctors, setDoctors] = useState<IDoctorWithFullAddress[]>([]);
   const [bookings, setBookings] = useState<IFormattedBooking[]>([]);
   const [snackbarStatus, setSnackbarStatus] = useState<ISnackbarStatus>({
     isOpen: false,
@@ -24,22 +22,20 @@ const BookingsPage = () => {
     status: undefined,
   });
 
-  const { isFetching } = useQuery('doctors', getDoctors, {
+  const { data: doctors, isFetching } = useQuery('doctors', getDoctors, {
     refetchOnWindowFocus: false,
     retry: false,
-    onSuccess: (data: IDoctor[]) => {
-      let formattedDoctors = [...data].map((doctor) => ({
-        ...doctor,
-        fullAddress: doctor.address.line_1.concat(
-          ', ',
-          doctor.address.line_2,
-          ', ',
-          doctor.address.district
-        ),
-      }));
-      setDoctors(formattedDoctors);
-    },
   });
+
+  const isFinished = (date: string, start: number) => {
+    const startTime = convertToTimeString(start);
+    const dateObject = new Date(`${date} ${startTime}`);
+    if (new Date() > dateObject) {
+      return true;
+    } else {
+      return false;
+    }
+  };
 
   useEffect(() => {
     async function getUserBookings() {
@@ -55,6 +51,9 @@ const BookingsPage = () => {
               ...booking,
               start: convertToTimeString(booking.start),
               end: convertToTimeString(booking.start + 1),
+              status: isFinished(booking.date, booking.start)
+                ? 'finished'
+                : booking.status,
             }))
             .reverse()
         );
@@ -93,7 +92,7 @@ const BookingsPage = () => {
   });
 
   const findDoctorByBooking = (booking: any) => {
-    return doctors.find((doctor) => doctor.id === booking.doctorId)!;
+    return doctors?.find((doctor) => doctor.id === booking.doctorId)!;
   };
 
   return (
@@ -112,20 +111,41 @@ const BookingsPage = () => {
           <CircularProgress />
         </Box>
       ) : (
-        <Grid container spacing={3}>
-          {bookings.map((booking) => (
-            <Grid item xs={12} sm={6} md={4} key={booking.id}>
-              <BookingCard
-                doctor={findDoctorByBooking(booking)}
-                booking={booking}
-                isLoading={isLoading}
-                onCancel={() =>
-                  mutateAsync({ bookingId: booking.id, status: 'cancelled' })
-                }
-              />
+        <>
+          {bookings.length > 0 ? (
+            <Grid container spacing={3}>
+              <>
+                {bookings.map((booking) => (
+                  <Grid item xs={12} sm={6} md={4} key={booking.id}>
+                    <BookingCard
+                      doctor={findDoctorByBooking(booking)}
+                      booking={booking}
+                      isLoading={isLoading}
+                      onCancel={() =>
+                        mutateAsync({
+                          bookingId: booking.id,
+                          status: 'cancelled',
+                        })
+                      }
+                    />
+                  </Grid>
+                ))}
+              </>
             </Grid>
-          ))}
-        </Grid>
+          ) : (
+            <Box
+              display="flex"
+              justifyContent="center"
+              height={400}
+              alignItems="center"
+              paddingTop={3}
+            >
+              <Typography variant="subtitle1" textAlign="center">
+                No bookings
+              </Typography>
+            </Box>
+          )}
+        </>
       )}
 
       <Snackbar

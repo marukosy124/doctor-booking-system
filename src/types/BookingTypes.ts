@@ -1,23 +1,18 @@
-export interface INewBooking {
+export interface IBooking {
+  id: string;
+  status: 'cancelled' | 'confirmed';
   name: string;
   start: number;
   doctorId: string;
   date: string;
 }
 
-export interface IBooking extends INewBooking {
-  id: string;
-  status: 'cancelled' | 'confirmed';
-}
+export interface INewBooking extends Omit<IBooking, 'id' | 'status'> {}
 
-export interface IFormattedBooking {
-  id: string;
-  status: 'cancelled' | 'confirmed';
-  name: string;
+export interface IFormattedBooking extends Omit<IBooking, 'status' | 'start'> {
+  status: 'cancelled' | 'confirmed' | 'finished';
   start: string;
   end: string;
-  doctorId: string;
-  date: string;
 }
 
 export interface IUpdateBooking {

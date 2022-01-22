@@ -21,6 +21,12 @@ export interface IOpeningHour {
   day: Day;
 }
 
+export interface IFormattedOpeningHour
+  extends Omit<IOpeningHour, 'start' | 'end'> {
+  start: number;
+  end: number;
+}
+
 export interface IDoctor {
   id: string;
   name: string;
@@ -29,6 +35,7 @@ export interface IDoctor {
   opening_hours: IOpeningHour[];
 }
 
-export interface IDoctorWithFullAddress extends IDoctor {
+export interface IFormattedDoctor extends Omit<IDoctor, 'opening_hours'> {
   fullAddress: string;
+  opening_hours: IFormattedOpeningHour[];
 }

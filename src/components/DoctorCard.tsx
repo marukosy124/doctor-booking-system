@@ -5,14 +5,16 @@ import {
   CardActions,
   Button,
 } from '@mui/material';
-import { IDoctor } from '../types/DoctorTypes';
+import { IFormattedDoctor } from '../types/DoctorTypes';
 import DoctorIcon from '../images/doctor.png';
 import PinDropRoundedIcon from '@mui/icons-material/PinDropRounded';
-import { Link } from 'react-router-dom';
 
-type PropsType = IDoctor;
+interface DoctorCardProps {
+  doctor: IFormattedDoctor;
+  onClick: () => void;
+}
 
-const DoctorCard: React.FC<PropsType> = (props) => {
+const DoctorCard: React.FC<DoctorCardProps> = (props) => {
   return (
     <Card
       sx={{
@@ -34,7 +36,7 @@ const DoctorCard: React.FC<PropsType> = (props) => {
           style={{ margin: '1rem' }}
         />
         <Typography variant="h6" mb={1}>
-          {props.name}
+          {props.doctor.name}
         </Typography>
         <Typography
           variant="body1"
@@ -43,15 +45,18 @@ const DoctorCard: React.FC<PropsType> = (props) => {
           display="flex"
         >
           <PinDropRoundedIcon sx={{ paddingRight: 1 }} />
-          {props.address.district}
+          {props.doctor.address.district}
         </Typography>
       </CardContent>
       <CardActions sx={{ padding: '1rem' }}>
-        <Link to={`/doctors?id=${props.id}`} style={{ width: '100%' }}>
-          <Button fullWidth sx={{ borderRadius: 10 }} variant="contained">
-            Book Now
-          </Button>
-        </Link>
+        <Button
+          fullWidth
+          sx={{ borderRadius: 10 }}
+          variant="contained"
+          onClick={props.onClick}
+        >
+          Book Now
+        </Button>
       </CardActions>
     </Card>
   );

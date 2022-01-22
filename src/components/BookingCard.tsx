@@ -6,16 +6,16 @@ import {
   Button,
   CardHeader,
 } from '@mui/material';
-import { IDoctorWithFullAddress } from '../types/DoctorTypes';
+import { IFormattedDoctor } from '../types/DoctorTypes';
 import MapsHomeWorkIcon from '@mui/icons-material/MapsHomeWork';
 import AccessTimeFilledOutlinedIcon from '@mui/icons-material/AccessTimeFilledOutlined';
 import { LoadingButton } from '@mui/lab';
-import CheckCircleOutlineOutlinedIcon from '@mui/icons-material/CheckCircleOutlineOutlined';
-import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined';
+import CheckCircleOutlineRoundedIcon from '@mui/icons-material/CheckCircleOutlineRounded';
+import HighlightOffRoundedIcon from '@mui/icons-material/HighlightOffRounded';
 import { IFormattedBooking } from '../types/BookingTypes';
 
 interface BookingCardProps {
-  doctor: IDoctorWithFullAddress;
+  doctor: IFormattedDoctor;
   booking: IFormattedBooking;
   isLoading: boolean;
   onCancel: () => void;
@@ -27,13 +27,22 @@ const BookingCard: React.FC<BookingCardProps> = (props) => {
       <CardHeader
         sx={{
           backgroundColor:
-            props.booking.status === 'confirmed' ? '#d5ebd6' : '#ffdede',
+            props.booking.status === 'confirmed'
+              ? '#d5ebd6'
+              : props.booking.status === 'cancelled'
+              ? '#ffdede'
+              : 'grey.300',
         }}
         avatar={
-          props.booking.status === 'confirmed' ? (
-            <CheckCircleOutlineOutlinedIcon color="success" fontSize="large" />
+          props.booking.status === 'cancelled' ? (
+            <HighlightOffRoundedIcon color="error" fontSize="large" />
           ) : (
-            <CancelOutlinedIcon color="error" fontSize="large" />
+            <CheckCircleOutlineRoundedIcon
+              color={
+                props.booking.status === 'confirmed' ? 'success' : 'inherit'
+              }
+              fontSize="large"
+            />
           )
         }
         title={props.doctor.name}
@@ -42,7 +51,7 @@ const BookingCard: React.FC<BookingCardProps> = (props) => {
       <CardContent>
         <Typography variant="body1" component="div" display="flex" pb={1}>
           <AccessTimeFilledOutlinedIcon sx={{ paddingRight: 1 }} />
-          {props.booking.date} {props.booking.start} ~ {props.booking.end}
+          {props.booking.date} {props.booking.start}-{props.booking.end}
         </Typography>
         <Typography variant="body1" component="div" display="flex" pb={1}>
           <MapsHomeWorkIcon sx={{ paddingRight: 1 }} />
@@ -62,14 +71,8 @@ const BookingCard: React.FC<BookingCardProps> = (props) => {
             Cancel Booking
           </LoadingButton>
         ) : (
-          <Button
-            size="small"
-            color="error"
-            variant="outlined"
-            sx={{ m: 1 }}
-            disabled
-          >
-            Cancelled
+          <Button size="small" variant="outlined" sx={{ m: 1 }} disabled>
+            {props.booking.status}
           </Button>
         )}
       </CardActions>

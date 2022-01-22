@@ -1,25 +1,39 @@
+import { AxiosResponse } from 'axios';
 import axios from './config/axios';
 import { IBooking, INewBooking, IUpdateBooking } from './types/BookingTypes';
-import { IDoctor } from './types/DoctorTypes';
+import { IDoctor, IFormattedDoctor } from './types/DoctorTypes';
+import { formatDoctorProfile } from './utils/helpers';
 
-export const getDoctors = (): Promise<IDoctor[]> => {
-  return axios.get('/doctor').then((res: any) => res.data);
+/*******************************************************************
+ * format doctors first before passing to pages
+ ******************************************************************/
+
+export const getDoctors = (): Promise<IFormattedDoctor[]> => {
+  return axios
+    .get('/doctor')
+    .then((res: AxiosResponse) =>
+      res.data.map((doctor: IDoctor) => formatDoctorProfile(doctor))
+    );
 };
 
-export const getDoctorById = (doctorId: string): Promise<IDoctor> => {
-  return axios.get(`/doctor/${doctorId}`).then((res: any) => res.data);
+export const getDoctorById = (doctorId: string): Promise<IFormattedDoctor> => {
+  return axios
+    .get(`/doctor/${doctorId}`)
+    .then((res: AxiosResponse) => formatDoctorProfile(res.data));
 };
 
 export const getBookings = (): Promise<IBooking[]> => {
-  return axios.get('/booking').then((res: any) => res.data);
+  return axios.get('/booking').then((res: AxiosResponse) => res.data);
 };
 
 export const getBookingById = (bookingId: string): Promise<IBooking> => {
-  return axios.get(`/booking/${bookingId}`).then((res: any) => res.data);
+  return axios
+    .get(`/booking/${bookingId}`)
+    .then((res: AxiosResponse) => res.data);
 };
 
 export const createBooking = (booking: INewBooking): Promise<IBooking> => {
-  return axios.post('/booking', booking).then((res: any) => res.data);
+  return axios.post('/booking', booking).then((res: AxiosResponse) => res.data);
 };
 
 export const updateBooking = ({
@@ -28,5 +42,5 @@ export const updateBooking = ({
 }: IUpdateBooking): Promise<IBooking> => {
   return axios
     .patch(`/booking/${bookingId}`, { status: status })
-    .then((res: any) => res.data);
+    .then((res: AxiosResponse) => res.data);
 };

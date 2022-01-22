@@ -3,7 +3,7 @@
  * while booking time is floating number
  ******************************************************************/
 
-import { IDoctor, IDoctorWithFullAddress } from '../types/DoctorTypes';
+import { Day, IDoctor, IFormattedDoctor } from '../types/DoctorTypes';
 
 export const convertToTimeString = (time: number): string => {
   let h = String(Math.floor(time));
@@ -26,9 +26,7 @@ export const convertToFloat = (
   return h + decimalPlace;
 };
 
-export const formatDoctorProfile = (
-  doctor: IDoctor
-): IDoctorWithFullAddress => {
+export const formatDoctorProfile = (doctor: IDoctor): IFormattedDoctor => {
   return {
     ...doctor,
     fullAddress: doctor.address.line_1.concat(
@@ -37,5 +35,11 @@ export const formatDoctorProfile = (
       ', ',
       doctor.address.district
     ),
+    opening_hours: doctor.opening_hours.map((hour) => ({
+      ...hour,
+      start: convertToFloat(hour.start, '.'),
+      end: convertToFloat(hour.end, '.'),
+      day: Number(Day[hour.day]),
+    })),
   };
 };

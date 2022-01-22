@@ -9,12 +9,14 @@ import {
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import { useQuery } from 'react-query';
 import { getDoctors } from '../api';
-import { IDoctor } from '../types/DoctorTypes';
+import { IDoctor, IFormattedDoctor } from '../types/DoctorTypes';
 import Carousel from 'react-multi-carousel';
 import 'react-multi-carousel/lib/styles.css';
 import DoctorCard from '../components/DoctorCard';
 import { ChangeEvent, useState, KeyboardEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import BookingModal from '../components/BookingModal';
+import { formatDoctorProfile } from '../utils/helpers';
 
 const responsive = {
   desktop: {
@@ -38,6 +40,7 @@ const HomePage: React.FC = () => {
   const navigate = useNavigate();
 
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [selectedDoctor, setSelectedDoctor] = useState<IFormattedDoctor>();
 
   const { data: doctors, isFetching } = useQuery('doctors', getDoctors, {
     retry: false,
@@ -51,60 +54,75 @@ const HomePage: React.FC = () => {
   };
 
   return (
-    <Container sx={{ p: 2, mx: 'auto' }} maxWidth={false}>
-      <Typography variant="h4" fontWeight="bold" textAlign="center" py={5}>
-        Find your doctor and make a booking
-      </Typography>
-      <TextField
-        value={searchQuery}
-        onChange={(e: ChangeEvent<HTMLInputElement>) =>
-          setSearchQuery(e.target.value)
-        }
-        onKeyPress={handleOnEnterPress}
-        fullWidth
-        placeholder="Search Doctor"
-        InputProps={{
-          endAdornment: (
-            <Link to={`/doctors?q=${searchQuery}`}>
-              <IconButton color="primary" size="large">
-                <SearchRoundedIcon />
-              </IconButton>
-            </Link>
-          ),
-        }}
-      />
+    <>
+      <Container sx={{ p: 2, mx: 'auto' }} maxWidth={false}>
+        <Typography variant="h4" fontWeight="bold" textAlign="center" py={5}>
+          Find your doctor and make a booking
+        </Typography>
+        <TextField
+          value={searchQuery}
+          onChange={(e: ChangeEvent<HTMLInputElement>) =>
+            setSearchQuery(e.target.value)
+          }
+          onKeyPress={handleOnEnterPress}
+          fullWidth
+          placeholder="Search Doctor"
+          InputProps={{
+            endAdornment: (
+              <Link to={`/doctors?q=${searchQuery}`}>
+                <IconButton color="primary" size="large">
+                  <SearchRoundedIcon />
+                </IconButton>
+              </Link>
+            ),
+          }}
+        />
 
-      <Typography variant="h6" fontWeight="bold" py="2rem">
-        Available Doctors
-      </Typography>
-      <Box
-        display={isFetching || doctors?.length === 0 ? 'flex' : 'block'}
-        justifyContent="center"
-        height={400}
-        alignItems="center"
-      >
-        {isFetching ? (
-          <CircularProgress />
-        ) : (
-          <>
-            {doctors && doctors.length > 0 ? (
-              <Carousel
-                responsive={responsive}
-                removeArrowOnDeviceType={['mobile']}
-              >
-                {doctors?.map((doctor: IDoctor) => (
-                  <DoctorCard {...doctor} key={doctor.id} />
-                ))}
-              </Carousel>
-            ) : (
-              <Typography variant="subtitle1" textAlign="center">
-                No doctors available
-              </Typography>
-            )}
-          </>
-        )}
-      </Box>
-    </Container>
+        <Typography variant="h6" fontWeight="bold" py="2rem">
+          Available Doctors
+        </Typography>
+        <Box
+          display={isFetching || doctors?.length === 0 ? 'flex' : 'block'}
+          justifyContent="center"
+          height={400}
+          alignItems="center"
+        >
+          {isFetching ? (
+            <CircularProgress />
+          ) : (
+            <>
+              {doctors && doctors.length > 0 ? (
+                <Carousel
+                  responsive={responsive}
+                  removeArrowOnDeviceType={['mobile']}
+                >
+                  {doctors?.map((doctor) => (
+                    <DoctorCard
+                      doctor={doctor}
+                      key={doctor.id}
+                      onClick={() => setSelectedDoctor(doctor)}
+                    />
+                  ))}
+                </Carousel>
+              ) : (
+                <Typography variant="subtitle1" textAlign="center">
+                  No doctors available
+                </Typography>
+              )}
+            </>
+          )}
+        </Box>
+      </Container>
+
+      {selectedDoctor && (
+        <BookingModal
+          doctor={selectedDoctor}
+          onClose={() => {
+            setSelectedDoctor(undefined);
+          }}
+        />
+      )}
+    </>
   );
 };
 

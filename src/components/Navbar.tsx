@@ -18,13 +18,13 @@ import { useState } from 'react';
 import MenuIcon from '@mui/icons-material/Menu';
 import HomeRoundedIcon from '@mui/icons-material/HomeRounded';
 import EventAvailableRoundedIcon from '@mui/icons-material/EventAvailableRounded';
-import MedicationRoundedIcon from '@mui/icons-material/MedicationRounded';
 import { Link, useLocation } from 'react-router-dom';
 import { makeStyles } from '@mui/styles';
+import PersonRoundedIcon from '@mui/icons-material/PersonRounded';
 
 const menuItems = [
   { title: 'Home', icon: <HomeRoundedIcon />, route: '/' },
-  { title: 'Doctors', icon: <MedicationRoundedIcon />, route: '/doctors' },
+  { title: 'Doctors', icon: <PersonRoundedIcon />, route: '/doctors' },
   {
     title: 'Bookings',
     icon: <EventAvailableRoundedIcon />,

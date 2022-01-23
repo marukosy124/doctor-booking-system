@@ -9,23 +9,63 @@ import {
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { useMutation, useQuery } from 'react-query';
-import { getBookingById, getDoctors, updateBooking } from '../api';
-import { IFormattedBooking, ISnackbarStatus } from '../types/BookingTypes';
+import { getBookings, getDoctors, updateBooking } from '../api';
+import {
+  IBooking,
+  IFormattedBooking,
+  ISnackbarStatus,
+} from '../types/BookingTypes';
 import { convertToTimeString } from '../utils/helpers';
 import BookingCard from '../components/BookingCard';
+import { queryClient } from '../config/reactQuery';
 
 const BookingsPage = () => {
-  const [bookings, setBookings] = useState<IFormattedBooking[]>([]);
+  const [userBookings, setUserBookings] = useState<IFormattedBooking[]>([]);
   const [snackbarStatus, setSnackbarStatus] = useState<ISnackbarStatus>({
     isOpen: false,
     message: '',
     status: undefined,
   });
 
-  const { data: doctors, isFetching } = useQuery('doctors', getDoctors, {
-    refetchOnWindowFocus: false,
-    retry: false,
-  });
+  const { data: doctors, isLoading: isDoctorsLoading } = useQuery(
+    'doctors',
+    getDoctors,
+    {
+      refetchOnWindowFocus: false,
+      retry: false,
+      initialData: () => queryClient.getQueryData('doctors'),
+    }
+  );
+
+  const { isLoading: isBookingsLoading, isFetching } = useQuery(
+    'bookings',
+    getBookings,
+    {
+      refetchOnWindowFocus: false,
+      retry: false,
+      initialData: () => queryClient.getQueryData('bookings'),
+      onSuccess: async (data: IBooking[]) => {
+        const bookingIds = localStorage.getItem('bookings');
+        if (bookingIds) {
+          const bookingIdsArray = JSON.parse(bookingIds);
+          const bookingHistory = data.filter(
+            (t) => !bookingIdsArray.includes(t)
+          );
+          const filteredUserBookings = bookingHistory
+            .map((booking) => ({
+              ...booking,
+              start: convertToTimeString(booking.start),
+              end: convertToTimeString(booking.start + 1),
+              status: isFinished(booking.date, booking.start)
+                ? 'finished'
+                : booking.status,
+            }))
+            .reverse();
+          setUserBookings(filteredUserBookings);
+        }
+      },
+    }
+  );
 
   const isFinished = (date: string, start: number) => {
     const startTime = convertToTimeString(start);
@@ -37,45 +77,19 @@ const BookingsPage = () => {
     }
   };
 
-  useEffect(() => {
-    async function getUserBookings() {
-      const bookingIds = localStorage.getItem('bookings');
-      if (bookingIds) {
-        const bookingIdsArray = JSON.parse(bookingIds);
-        const bookingHistory = await Promise.all(
-          bookingIdsArray.map((id: string) => getBookingById(id))
-        );
-        setBookings(
-          bookingHistory
-            .map((booking) => ({
-              ...booking,
-              start: convertToTimeString(booking.start),
-              end: convertToTimeString(booking.start + 1),
-              status: isFinished(booking.date, booking.start)
-                ? 'finished'
-                : booking.status,
-            }))
-            .reverse()
-        );
-      }
-    }
-
-    getUserBookings();
-  }, []);
-
-  const { mutateAsync, isLoading } = useMutation(updateBooking, {
+  const { mutateAsync, isLoading: isUpdating } = useMutation(updateBooking, {
     onSuccess: (data) => {
       // update bookings locally instead of refetching all bookings
-      let updatedBookingIndex = bookings.findIndex(
+      let updatedBookingIndex = userBookings.findIndex(
         (booking) => booking.id === data.id
       )!;
-      const newBookings = [...bookings];
+      const newBookings = [...userBookings];
       newBookings[updatedBookingIndex] = {
         ...data,
         start: convertToTimeString(data.start),
         end: convertToTimeString(data.start + 1),
       };
-      setBookings(newBookings);
+      setUserBookings(newBookings);
       setSnackbarStatus({
         isOpen: true,
         message: 'Your booking has been cancelled',
@@ -100,7 +114,7 @@ const BookingsPage = () => {
       <Typography variant="h5" pb={4}>
         Your Bookings
       </Typography>
-      {isFetching || isLoading ? (
+      {isDoctorsLoading || isBookingsLoading || isUpdating || isFetching ? (
         <Box
           display="flex"
           justifyContent="center"
@@ -112,15 +126,15 @@ const BookingsPage = () => {
         </Box>
       ) : (
         <>
-          {bookings.length > 0 ? (
+          {userBookings.length > 0 ? (
             <Grid container spacing={3}>
               <>
-                {bookings.map((booking) => (
+                {userBookings.map((booking) => (
                   <Grid item xs={12} sm={6} md={4} key={booking.id}>
                     <BookingCard
                       doctor={findDoctorByBooking(booking)}
                       booking={booking}
-                      isLoading={isLoading}
+                      isLoading={isUpdating}
                       onCancel={() =>
                         mutateAsync({
                           bookingId: booking.id,

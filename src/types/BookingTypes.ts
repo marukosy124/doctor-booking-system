@@ -1,6 +1,6 @@
 export interface IBooking {
   id: string;
-  status: 'cancelled' | 'confirmed';
+  status: string;
   name: string;
   start: number;
   doctorId: string;
@@ -10,7 +10,7 @@ export interface IBooking {
 export interface INewBooking extends Omit<IBooking, 'id' | 'status'> {}
 
 export interface IFormattedBooking extends Omit<IBooking, 'status' | 'start'> {
-  status: 'cancelled' | 'confirmed' | 'finished';
+  status: string;
   start: string;
   end: string;
 }

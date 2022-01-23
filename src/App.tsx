@@ -7,6 +7,7 @@ import Navbar from './components/Navbar';
 import { ThemeProvider } from '@mui/material/styles';
 import { customTheme } from './theme/theme';
 import { QueryClient, QueryClientProvider } from 'react-query';
+import { ReactQueryDevtools } from 'react-query/devtools';
 
 const App = () => {
   const queryClient = new QueryClient();
@@ -21,6 +22,7 @@ const App = () => {
           <Route path="/bookings" element={<BookingsPage />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
+        <ReactQueryDevtools initialIsOpen={false} />
       </QueryClientProvider>
     </ThemeProvider>
   );

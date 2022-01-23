@@ -34,6 +34,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import CheckCircleOutlineRoundedIcon from '@mui/icons-material/CheckCircleOutlineRounded';
 import PersonRoundedIcon from '@mui/icons-material/PersonRounded';
 import { AxiosError } from 'axios';
+import { queryClient } from '../config/reactQuery';
 
 const CHOOSABLE_DAYS_LENGTH = 10;
 
@@ -61,6 +62,7 @@ const BookingModal: React.FC<BookingModalProps> = (props) => {
 
   const { isFetching, isFetched } = useQuery('bookings', getBookings, {
     refetchOnWindowFocus: false,
+    initialData: () => queryClient.getQueryData('bookings'),
     onSuccess: (data: IBooking[]) => {
       const confirmedBookings = data.filter(
         (booking) =>

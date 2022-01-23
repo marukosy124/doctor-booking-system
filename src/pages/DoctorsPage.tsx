@@ -14,8 +14,9 @@ import { IFormattedDoctor } from '../types/DoctorTypes';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import DoctorProfileCard from '../components/DoctorProfileCard';
 import BookingModal from '../components/BookingModal';
+import { queryClient } from '../config/reactQuery';
 
-const DoctorsPage: React.FC = (props) => {
+const DoctorsPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const queryString = searchParams.get('q') ?? '';
@@ -27,6 +28,7 @@ const DoctorsPage: React.FC = (props) => {
   const { isFetching, refetch } = useQuery('doctors', getDoctors, {
     refetchOnWindowFocus: false,
     retry: false,
+    initialData: () => queryClient.getQueryData('doctors'),
     onSuccess: (data: IFormattedDoctor[]) => {
       let filteredDoctors = [...data];
       if (queryString) {
@@ -81,7 +83,6 @@ const DoctorsPage: React.FC = (props) => {
           justifyContent="center"
           height={400}
           alignItems="center"
-          paddingTop={3}
         >
           {isFetching ? (
             <CircularProgress />

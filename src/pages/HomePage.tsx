@@ -9,14 +9,14 @@ import {
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import { useQuery } from 'react-query';
 import { getDoctors } from '../api';
-import { IDoctor, IFormattedDoctor } from '../types/DoctorTypes';
+import { IFormattedDoctor } from '../types/DoctorTypes';
 import Carousel from 'react-multi-carousel';
 import 'react-multi-carousel/lib/styles.css';
 import DoctorCard from '../components/DoctorCard';
 import { ChangeEvent, useState, KeyboardEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import BookingModal from '../components/BookingModal';
-import { formatDoctorProfile } from '../utils/helpers';
+import { queryClient } from '../config/reactQuery';
 
 const responsive = {
   desktop: {
@@ -42,9 +42,10 @@ const HomePage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedDoctor, setSelectedDoctor] = useState<IFormattedDoctor>();
 
-  const { data: doctors, isFetching } = useQuery('doctors', getDoctors, {
+  const { data: doctors, isLoading } = useQuery('doctors', getDoctors, {
     retry: false,
     refetchOnWindowFocus: false,
+    initialData: queryClient.getQueryData('doctors'),
   });
 
   const handleOnEnterPress = (e: KeyboardEvent<HTMLDivElement>) => {
@@ -82,12 +83,12 @@ const HomePage: React.FC = () => {
           Available Doctors
         </Typography>
         <Box
-          display={isFetching || doctors?.length === 0 ? 'flex' : 'block'}
+          display={isLoading || doctors?.length === 0 ? 'flex' : 'block'}
           justifyContent="center"
           height={400}
           alignItems="center"
         >
-          {isFetching ? (
+          {isLoading ? (
             <CircularProgress />
           ) : (
             <>

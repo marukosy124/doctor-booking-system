@@ -18,15 +18,16 @@ import {
   Typography,
   Alert,
   Snackbar,
+  Divider,
 } from '@mui/material';
 import { IFormattedDoctor } from '../types/DoctorTypes';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import AdapterDateFns from '@mui/lab/AdapterDateFns';
 import LocalizationProvider from '@mui/lab/LocalizationProvider';
 import CalendarPicker from '@mui/lab/CalendarPicker';
-import { addDays, format, getDay } from 'date-fns';
+import { addDays, addHours, format, getDay } from 'date-fns';
 import { IBooking } from '../types/BookingTypes';
-import { isError, useMutation, useQuery } from 'react-query';
+import { useMutation, useQuery } from 'react-query';
 import { createBooking, getBookings } from '../api';
 import { LoadingButton } from '@mui/lab';
 import { useNavigate } from 'react-router-dom';
@@ -35,8 +36,8 @@ import CloseIcon from '@mui/icons-material/Close';
 import CheckCircleOutlineRoundedIcon from '@mui/icons-material/CheckCircleOutlineRounded';
 import PersonRoundedIcon from '@mui/icons-material/PersonRounded';
 import { AxiosError } from 'axios';
-import { queryClient } from '../config/reactQuery';
-
+import MapsHomeWorkIcon from '@mui/icons-material/MapsHomeWork';
+import AccessTimeFilledOutlinedIcon from '@mui/icons-material/AccessTimeFilledOutlined';
 const CHOOSABLE_DAYS_LENGTH = 10;
 
 interface BookingModalProps {
@@ -56,26 +57,23 @@ const BookingModal: React.FC<BookingModalProps> = (props) => {
   const [inavailableDates, setInavailableDates] = useState<string[]>([]);
   const [inavailableTimes, setInavailableTimes] = useState<string[]>([]);
   const [possibleTimes, setPossibleTimes] = useState<string[]>([]);
-  const [bookings, setBookings] = useState<IBooking[]>([]);
   const [name, setName] = useState<string>('');
   const [isEmpty, setIsEmpty] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   const [isFetchingError, setIsFetchingError] = useState<boolean>(false);
 
   const {
+    data: bookings,
     isLoading: isBookingsLoading,
-    isFetching,
     isFetched,
   } = useQuery('bookings', getBookings, {
-    initialData: () => queryClient.getQueryData('bookings'),
-    onSuccess: (data: IBooking[]) => {
+    select: useCallback((data: IBooking[]) => {
       const confirmedBookings = data.filter(
         (booking) =>
           booking.status === 'confirmed' && booking.doctorId === props.doctor.id
       );
-      setBookings(confirmedBookings);
-    },
-    onError: () => setIsFetchingError(true),
+      return confirmedBookings;
+    }, []),
   });
 
   const computeDates = () => {
@@ -106,7 +104,7 @@ const BookingModal: React.FC<BookingModalProps> = (props) => {
   };
 
   const computeTimes = () => {
-    if (date) {
+    if (date && bookings) {
       // formate the date to enhance data comparison
       const formattedDate = format(date, 'yyyy-MM-dd');
 
@@ -196,7 +194,12 @@ const BookingModal: React.FC<BookingModalProps> = (props) => {
     }
   }, [date]);
 
-  const { mutate, isSuccess, isLoading } = useMutation(createBooking, {
+  const {
+    data: newBooking,
+    mutate,
+    isSuccess,
+    isLoading,
+  } = useMutation(createBooking, {
     onSuccess: (data) => {
       // store booking in localstorage
       const bookingHistory = localStorage.getItem('bookings');
@@ -210,6 +213,8 @@ const BookingModal: React.FC<BookingModalProps> = (props) => {
           JSON.stringify(Array.from(newBookingHistory))
         );
       }
+      // used as global state -> tell other pages that the bookings is updated
+      localStorage.setItem('isBookingsUpdated', JSON.stringify('true'));
     },
     onError: (error: AxiosError) => {
       setError(error.response?.data);
@@ -276,23 +281,62 @@ const BookingModal: React.FC<BookingModalProps> = (props) => {
               <CircularProgress sx={{ m: 'auto' }} />
             ) : (
               <>
-                {isSuccess ? (
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                    }}
-                  >
-                    <CheckCircleOutlineRoundedIcon
-                      color="primary"
-                      fontSize="large"
-                      sx={{ fontSize: 100 }}
-                    />
-                    <Typography variant="h6" my={2} textAlign="center">
-                      Your booking has been registered successfully
-                    </Typography>
-                  </Box>
+                {isSuccess && newBooking ? (
+                  <>
+                    <Box
+                      sx={{
+                        alignItems: 'center',
+                        justifyContent: 'space-around',
+                        display: 'flex',
+                        flexDirection: 'column',
+                      }}
+                    >
+                      <CheckCircleOutlineRoundedIcon
+                        color="primary"
+                        fontSize="large"
+                        sx={{ fontSize: 100 }}
+                      />
+                      <Typography variant="h6" my={2} textAlign="center">
+                        Your booking has been registered successfully
+                      </Typography>
+                    </Box>
+                    {/* <Grid item xs={6}> */}
+                    <Box
+                      sx={{
+                        border: '1px solid primary',
+                        borderRadius: 3,
+                        borderStyle: 'dotted',
+                        p: 2,
+                      }}
+                    >
+                      <Typography variant="h6">{props.doctor.name}</Typography>
+                      <Typography variant="body1" pb={1}>
+                        Your registered name: {newBooking.name}
+                      </Typography>
+                      <Typography
+                        variant="body1"
+                        component="div"
+                        display="flex"
+                        pb={1}
+                      >
+                        <AccessTimeFilledOutlinedIcon
+                          sx={{ paddingRight: 1 }}
+                        />
+                        {newBooking.date}{' '}
+                        {convertToTimeString(newBooking.start)}-
+                        {convertToTimeString(newBooking.start + 1)}
+                      </Typography>
+                      <Typography
+                        variant="body1"
+                        component="div"
+                        display="flex"
+                        pb={1}
+                      >
+                        <MapsHomeWorkIcon sx={{ paddingRight: 1 }} />
+                        {props.doctor.fullAddress}
+                      </Typography>
+                    </Box>
+                  </>
                 ) : (
                   <LocalizationProvider dateAdapter={AdapterDateFns}>
                     <Typography
@@ -376,7 +420,7 @@ const BookingModal: React.FC<BookingModalProps> = (props) => {
             sx={{ m: 2, borderRadius: 10 }}
             onClick={isSuccess ? () => navigate('/bookings') : handleSubmit}
           >
-            {isSuccess ? 'Check Your Bookings' : 'Confirm'}
+            {isSuccess ? 'Check Your Booking History' : 'Confirm'}
           </LoadingButton>
         </DialogActions>
       </Dialog>

@@ -13,6 +13,7 @@ export interface IFormattedBooking extends Omit<IBooking, 'status' | 'start'> {
   status: string;
   start: string;
   end: string;
+  fullStartDatetime: Date;
 }
 
 export interface IUpdateBooking {

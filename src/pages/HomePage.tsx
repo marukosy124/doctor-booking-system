@@ -1,6 +1,9 @@
 import {
   Alert,
   Box,
+  Button,
+  Card,
+  CardContent,
   CircularProgress,
   Container,
   IconButton,
@@ -15,10 +18,9 @@ import { IFormattedDoctor } from '../types/DoctorTypes';
 import Carousel from 'react-multi-carousel';
 import 'react-multi-carousel/lib/styles.css';
 import DoctorCard from '../components/DoctorCard';
-import { ChangeEvent, useState, KeyboardEvent } from 'react';
+import { ChangeEvent, useState, KeyboardEvent, Fragment } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import BookingModal from '../components/BookingModal';
-import { queryClient } from '../config/reactQuery';
 
 const responsive = {
   desktop: {
@@ -41,12 +43,14 @@ const responsive = {
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
 
+  const [maxSlidesLength, setMaxSlidesLength] = useState(6);
   const [isError, setIsError] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedDoctor, setSelectedDoctor] = useState<IFormattedDoctor>();
 
   const { data: doctors, isLoading } = useQuery('doctors', getDoctors, {
-    initialData: queryClient.getQueryData('doctors'),
+    onSuccess: (data: IFormattedDoctor[]) =>
+      setMaxSlidesLength(data.length >= 6 ? 6 : data.length),
     onError: () => setIsError(true),
   });
 
@@ -99,12 +103,41 @@ const HomePage: React.FC = () => {
                   responsive={responsive}
                   removeArrowOnDeviceType={['mobile']}
                 >
-                  {doctors?.map((doctor) => (
-                    <DoctorCard
-                      doctor={doctor}
-                      key={doctor.id}
-                      onClick={() => setSelectedDoctor(doctor)}
-                    />
+                  {doctors?.slice(0, maxSlidesLength).map((doctor, index) => (
+                    <Fragment key={index}>
+                      {index < maxSlidesLength - 1 ? (
+                        <DoctorCard
+                          doctor={doctor}
+                          onClick={() => setSelectedDoctor(doctor)}
+                        />
+                      ) : (
+                        <Card
+                          sx={{
+                            height: 300,
+                            m: '1rem',
+                          }}
+                        >
+                          <CardContent
+                            sx={{
+                              margin: 'auto',
+                            }}
+                          >
+                            <Typography variant="h6" mb={1}>
+                              Cannot find your doctor?
+                            </Typography>
+                            <Link to="/doctors" style={{ width: '100%' }}>
+                              <Button
+                                fullWidth
+                                sx={{ borderRadius: 10 }}
+                                variant="outlined"
+                              >
+                                See All
+                              </Button>
+                            </Link>
+                          </CardContent>
+                        </Card>
+                      )}
+                    </Fragment>
                   ))}
                 </Carousel>
               ) : (

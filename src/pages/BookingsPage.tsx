@@ -7,77 +7,25 @@ import {
   Alert,
   Snackbar,
 } from '@mui/material';
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useMutation, useQuery } from 'react-query';
 import { getBookings, getDoctors, updateBooking } from '../api';
-import {
-  IBooking,
-  IFormattedBooking,
-  ISnackbarStatus,
-} from '../types/BookingTypes';
+import { IBooking, ISnackbarStatus } from '../types/BookingTypes';
 import { convertToTimeString } from '../utils/helpers';
 import BookingCard from '../components/BookingCard';
-import { queryClient } from '../config/reactQuery';
 
 const BookingsPage = () => {
-  const bookingIds = localStorage.getItem('bookings');
+  const bookingIdsString = localStorage.getItem('bookings');
+  const isBookingsUpdatedString = localStorage.getItem('isBookingsUpdated');
+  const bookingIds = JSON.parse(bookingIdsString ?? '');
+  const isBookingsUpdated =
+    JSON.parse(isBookingsUpdatedString ?? '') === 'true';
 
-  const [userBookings, setUserBookings] = useState<IFormattedBooking[]>([]);
   const [snackbarStatus, setSnackbarStatus] = useState<ISnackbarStatus>({
     isOpen: false,
     message: '',
     status: undefined,
   });
-
-  // only runs the requests when localstorage has stored bookings
-  const { data: doctors, isLoading: isDoctorsLoading } = useQuery(
-    'doctors',
-    getDoctors,
-    {
-      enabled: Boolean(bookingIds),
-      initialData: () => queryClient.getQueryData('doctors'),
-      onError: () =>
-        setSnackbarStatus({
-          isOpen: true,
-          message: ' Something went wrong. Unable to fetch doctors.',
-          status: 'error',
-        }),
-    }
-  );
-
-  const { isLoading: isBookingsLoading, isFetching } = useQuery(
-    'bookings',
-    getBookings,
-    {
-      enabled: Boolean(bookingIds),
-      initialData: () => queryClient.getQueryData('bookings'),
-      onSuccess: async (data: IBooking[]) => {
-        if (bookingIds) {
-          const bookingIdsArray = JSON.parse(bookingIds);
-          const bookingHistory = data.filter((booking) =>
-            bookingIdsArray.includes(booking.id)
-          );
-          const filteredUserBookings = bookingHistory
-            .map((booking) => ({
-              ...booking,
-              start: convertToTimeString(booking.start),
-              end: convertToTimeString(booking.start + 1),
-              status: isFinished(booking.date, booking.start)
-                ? 'finished'
-                : booking.status,
-            }))
-            .reverse();
-          setUserBookings(filteredUserBookings);
-        }
-      },
-      onError: () =>
-        setSnackbarStatus({
-          isOpen: true,
-          message: ' Something went wrong. Unable to fetch your bookings.',
-          status: 'error',
-        }),
-    }
-  );
 
   const isFinished = (date: string, start: number) => {
     const startTime = convertToTimeString(start);
@@ -89,19 +37,61 @@ const BookingsPage = () => {
     }
   };
 
+  const {
+    data: bookings,
+    isLoading: isBookingsLoading,
+    refetch,
+  } = useQuery('bookings', getBookings, {
+    enabled: Boolean(bookingIds),
+    select: useCallback((data: IBooking[]) => {
+      // filter out user's bookings
+      const bookingHistory = data.filter((booking) =>
+        bookingIds.includes(booking.id)
+      );
+      // format the bookings fto serve the cards
+      let filteredUserBookings = bookingHistory.map((booking) => ({
+        ...booking,
+        start: convertToTimeString(booking.start),
+        end: convertToTimeString(booking.start + 1),
+        status: isFinished(booking.date, booking.start)
+          ? 'finished'
+          : booking.status,
+        fullStartDatetime: new Date(
+          `${booking.date} ${convertToTimeString(booking.start)}`
+        ),
+      }));
+      // sort the bookings according to the booking time in ascending order
+      filteredUserBookings = filteredUserBookings.sort(
+        (prevBooking, nextBooking) =>
+          prevBooking.fullStartDatetime > nextBooking.fullStartDatetime
+            ? 1
+            : nextBooking.fullStartDatetime > prevBooking.fullStartDatetime
+            ? -1
+            : 0
+      );
+      localStorage.setItem('isBookingsUpdated', JSON.stringify('false'));
+      return filteredUserBookings;
+    }, []),
+  });
+
+  // only runs the requests when localstorage has stored bookings
+  const { data: doctors, isLoading: isDoctorsLoading } = useQuery(
+    'doctors',
+    getDoctors,
+    {
+      enabled: Boolean(bookingIds),
+      onError: () =>
+        setSnackbarStatus({
+          isOpen: true,
+          message: ' Something went wrong. Unable to fetch doctors.',
+          status: 'error',
+        }),
+    }
+  );
+
   const { mutateAsync, isLoading: isUpdating } = useMutation(updateBooking, {
-    onSuccess: (data) => {
-      // update bookings locally instead of refetching all bookings
-      let updatedBookingIndex = userBookings.findIndex(
-        (booking) => booking.id === data.id
-      )!;
-      const newBookings = [...userBookings];
-      newBookings[updatedBookingIndex] = {
-        ...data,
-        start: convertToTimeString(data.start),
-        end: convertToTimeString(data.start + 1),
-      };
-      setUserBookings(newBookings);
+    onSuccess: async () => {
+      await refetch();
       setSnackbarStatus({
         isOpen: true,
         message: 'Your booking has been cancelled',
@@ -124,9 +114,12 @@ const BookingsPage = () => {
   return (
     <Container sx={{ p: 2, mx: 'auto' }} maxWidth={false}>
       <Typography variant="h5" pb={4}>
-        Your Bookings
+        Your Latest Bookings
       </Typography>
-      {isDoctorsLoading || isBookingsLoading || isUpdating || isFetching ? (
+      {isDoctorsLoading ||
+      isUpdating ||
+      isBookingsLoading ||
+      isBookingsUpdated ? (
         <Box
           display="flex"
           justifyContent="center"
@@ -138,10 +131,10 @@ const BookingsPage = () => {
         </Box>
       ) : (
         <>
-          {userBookings.length > 0 ? (
+          {bookings && bookings.length > 0 ? (
             <Grid container spacing={3}>
               <>
-                {userBookings.map((booking) => (
+                {bookings.map((booking) => (
                   <Grid item xs={12} sm={6} md={4} key={booking.id}>
                     <BookingCard
                       doctor={findDoctorByBooking(booking)}
@@ -173,7 +166,6 @@ const BookingsPage = () => {
           )}
         </>
       )}
-
       <Snackbar
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
         open={snackbarStatus.isOpen}

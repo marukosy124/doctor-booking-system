@@ -16,7 +16,6 @@ import { IFormattedDoctor } from '../types/DoctorTypes';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import DoctorProfileCard from '../components/DoctorProfileCard';
 import BookingModal from '../components/BookingModal';
-import { queryClient } from '../config/reactQuery';
 
 const DoctorsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -29,7 +28,6 @@ const DoctorsPage: React.FC = () => {
   const [selectedDoctor, setSelectedDoctor] = useState<IFormattedDoctor>();
 
   const { isFetching, refetch } = useQuery('doctors', getDoctors, {
-    initialData: () => queryClient.getQueryData('doctors'),
     onSuccess: (data: IFormattedDoctor[]) => {
       let filteredDoctors = [...data];
       if (queryString) {

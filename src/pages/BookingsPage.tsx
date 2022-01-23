@@ -7,7 +7,7 @@ import {
   Alert,
   Snackbar,
 } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useMutation, useQuery } from 'react-query';
 import { getBookings, getDoctors, updateBooking } from '../api';
 import {
@@ -48,8 +48,8 @@ const BookingsPage = () => {
         const bookingIds = localStorage.getItem('bookings');
         if (bookingIds) {
           const bookingIdsArray = JSON.parse(bookingIds);
-          const bookingHistory = data.filter(
-            (t) => !bookingIdsArray.includes(t)
+          const bookingHistory = data.filter((booking) =>
+            bookingIdsArray.includes(booking.id)
           );
           const filteredUserBookings = bookingHistory
             .map((booking) => ({

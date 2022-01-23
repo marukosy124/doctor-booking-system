@@ -20,6 +20,8 @@ import BookingCard from '../components/BookingCard';
 import { queryClient } from '../config/reactQuery';
 
 const BookingsPage = () => {
+  const bookingIds = localStorage.getItem('bookings');
+
   const [userBookings, setUserBookings] = useState<IFormattedBooking[]>([]);
   const [snackbarStatus, setSnackbarStatus] = useState<ISnackbarStatus>({
     isOpen: false,
@@ -27,13 +29,19 @@ const BookingsPage = () => {
     status: undefined,
   });
 
+  // only runs the requests when localstorage has stored bookings
   const { data: doctors, isLoading: isDoctorsLoading } = useQuery(
     'doctors',
     getDoctors,
     {
-      refetchOnWindowFocus: false,
-      retry: false,
+      enabled: Boolean(bookingIds),
       initialData: () => queryClient.getQueryData('doctors'),
+      onError: () =>
+        setSnackbarStatus({
+          isOpen: true,
+          message: ' Something went wrong. Unable to fetch doctors.',
+          status: 'error',
+        }),
     }
   );
 
@@ -41,11 +49,9 @@ const BookingsPage = () => {
     'bookings',
     getBookings,
     {
-      refetchOnWindowFocus: false,
-      retry: false,
+      enabled: Boolean(bookingIds),
       initialData: () => queryClient.getQueryData('bookings'),
       onSuccess: async (data: IBooking[]) => {
-        const bookingIds = localStorage.getItem('bookings');
         if (bookingIds) {
           const bookingIdsArray = JSON.parse(bookingIds);
           const bookingHistory = data.filter((booking) =>
@@ -64,6 +70,12 @@ const BookingsPage = () => {
           setUserBookings(filteredUserBookings);
         }
       },
+      onError: () =>
+        setSnackbarStatus({
+          isOpen: true,
+          message: ' Something went wrong. Unable to fetch your bookings.',
+          status: 'error',
+        }),
     }
   );
 
@@ -173,7 +185,6 @@ const BookingsPage = () => {
           })
         }
         autoHideDuration={3000}
-        key="test"
       >
         {snackbarStatus.status && (
           <Alert severity={snackbarStatus.status}>

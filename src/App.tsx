@@ -6,12 +6,11 @@ import BookingsPage from './pages/BookingsPage';
 import Navbar from './components/Navbar';
 import { ThemeProvider } from '@mui/material/styles';
 import { customTheme } from './theme/theme';
-import { QueryClient, QueryClientProvider } from 'react-query';
+import { QueryClientProvider } from 'react-query';
 import { ReactQueryDevtools } from 'react-query/devtools';
+import { queryClient } from './config/reactQuery';
 
 const App = () => {
-  const queryClient = new QueryClient();
-
   return (
     <ThemeProvider theme={customTheme}>
       <QueryClientProvider client={queryClient}>

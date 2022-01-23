@@ -1,8 +1,10 @@
 import {
+  Alert,
   Box,
   CircularProgress,
   Container,
   IconButton,
+  Snackbar,
   TextField,
   Typography,
 } from '@mui/material';
@@ -39,13 +41,13 @@ const responsive = {
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
 
+  const [isError, setIsError] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedDoctor, setSelectedDoctor] = useState<IFormattedDoctor>();
 
   const { data: doctors, isLoading } = useQuery('doctors', getDoctors, {
-    retry: false,
-    refetchOnWindowFocus: false,
     initialData: queryClient.getQueryData('doctors'),
+    onError: () => setIsError(true),
   });
 
   const handleOnEnterPress = (e: KeyboardEvent<HTMLDivElement>) => {
@@ -123,6 +125,17 @@ const HomePage: React.FC = () => {
           }}
         />
       )}
+
+      <Snackbar
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        open={isError}
+        onClose={() => setIsError(false)}
+        autoHideDuration={3000}
+      >
+        <Alert severity="error">
+          Something went wrong. Unable to fetch doctors.
+        </Alert>
+      </Snackbar>
     </>
   );
 };

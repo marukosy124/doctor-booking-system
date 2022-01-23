@@ -17,6 +17,7 @@ import {
   Theme,
   Typography,
   Alert,
+  Snackbar,
 } from '@mui/material';
 import { IFormattedDoctor } from '../types/DoctorTypes';
 import { useEffect, useState } from 'react';
@@ -25,7 +26,7 @@ import LocalizationProvider from '@mui/lab/LocalizationProvider';
 import CalendarPicker from '@mui/lab/CalendarPicker';
 import { addDays, format, getDay } from 'date-fns';
 import { IBooking } from '../types/BookingTypes';
-import { useMutation, useQuery } from 'react-query';
+import { isError, useMutation, useQuery } from 'react-query';
 import { createBooking, getBookings } from '../api';
 import { LoadingButton } from '@mui/lab';
 import { useNavigate } from 'react-router-dom';
@@ -59,9 +60,13 @@ const BookingModal: React.FC<BookingModalProps> = (props) => {
   const [name, setName] = useState<string>('');
   const [isEmpty, setIsEmpty] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
+  const [isFetchingError, setIsFetchingError] = useState<boolean>(false);
 
-  const { isFetching, isFetched } = useQuery('bookings', getBookings, {
-    refetchOnWindowFocus: false,
+  const {
+    isLoading: isBookingsLoading,
+    isFetching,
+    isFetched,
+  } = useQuery('bookings', getBookings, {
     initialData: () => queryClient.getQueryData('bookings'),
     onSuccess: (data: IBooking[]) => {
       const confirmedBookings = data.filter(
@@ -70,6 +75,7 @@ const BookingModal: React.FC<BookingModalProps> = (props) => {
       );
       setBookings(confirmedBookings);
     },
+    onError: () => setIsFetchingError(true),
   });
 
   const computeDates = () => {
@@ -105,7 +111,7 @@ const BookingModal: React.FC<BookingModalProps> = (props) => {
       const formattedDate = format(date, 'yyyy-MM-dd');
 
       // convert current time to float
-      const currentTime = convertToFloat(format(new Date(), 'HH:mm'), ':');
+      const currentTime = convertToFloat(format(new Date(), 'HH:mm'));
 
       // get day of the week of the selected date
       const dayOfSelectedDate = date.getDay();
@@ -218,7 +224,7 @@ const BookingModal: React.FC<BookingModalProps> = (props) => {
       const bookingRequest = {
         name: name,
         doctorId: props.doctor.id,
-        start: convertToFloat(time, ':'),
+        start: convertToFloat(time),
         date: format(date, 'yyyy-MM-dd'),
       };
       mutate(bookingRequest);
@@ -226,146 +232,166 @@ const BookingModal: React.FC<BookingModalProps> = (props) => {
   };
 
   return (
-    <Dialog fullScreen={fullScreen} maxWidth="xl" onClose={props.onClose} open>
-      <DialogTitle>
-        Make a Booking
-        <IconButton
-          onClick={props.onClose}
-          sx={{
-            position: 'absolute',
-            right: 8,
-            top: 8,
-            color: (theme: Theme) => theme.palette.grey[500],
-          }}
-        >
-          <CloseIcon />
-        </IconButton>
-      </DialogTitle>
-      <DialogContent dividers sx={{ display: 'flex' }}>
-        <Box
-          noValidate
-          component="form"
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            m: 'auto',
-            width: 'fit-content',
-            minWidth: fullScreen ? '100%' : 780,
-            minHeight: 300,
-            justifyContent: 'center',
-          }}
-        >
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
-            </Alert>
-          )}
-          {isFetching ? (
-            <CircularProgress sx={{ m: 'auto' }} />
-          ) : (
-            <>
-              {isSuccess ? (
-                <Box
-                  sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                  }}
-                >
-                  <CheckCircleOutlineRoundedIcon
-                    color="primary"
-                    fontSize="large"
-                    sx={{ fontSize: 100 }}
-                  />
-                  <Typography variant="h6" my={2} textAlign="center">
-                    Your booking has been registered successfully
-                  </Typography>
-                </Box>
-              ) : (
-                <LocalizationProvider dateAdapter={AdapterDateFns}>
-                  <Typography
-                    variant="h6"
-                    alignItems="center"
-                    component="div"
-                    display="flex"
+    <>
+      <Dialog
+        fullScreen={fullScreen}
+        maxWidth="xl"
+        onClose={props.onClose}
+        open
+      >
+        <DialogTitle>
+          Make a Booking
+          <IconButton
+            onClick={props.onClose}
+            sx={{
+              position: 'absolute',
+              right: 8,
+              top: 8,
+              color: (theme: Theme) => theme.palette.grey[500],
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent dividers sx={{ display: 'flex' }}>
+          <Box
+            noValidate
+            component="form"
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              m: 'auto',
+              width: 'fit-content',
+              minWidth: fullScreen ? '100%' : 780,
+              minHeight: 300,
+              justifyContent: 'center',
+            }}
+          >
+            {error && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {error}
+              </Alert>
+            )}
+            {isBookingsLoading ? (
+              <CircularProgress sx={{ m: 'auto' }} />
+            ) : (
+              <>
+                {isSuccess ? (
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                    }}
                   >
-                    <PersonRoundedIcon sx={{ paddingRight: 1 }} />
-                    {props.doctor.name}
-                  </Typography>
-                  <Grid
-                    container
-                    alignItems="center"
-                    justifyContent="space-around"
-                  >
-                    <Grid item xs={12} md={5} justifyContent="center">
-                      <CalendarPicker
-                        minDate={minDate}
-                        maxDate={addDays(new Date(), CHOOSABLE_DAYS_LENGTH)}
-                        date={date}
-                        onChange={(newDate) => setDate(newDate)}
-                        views={['day']}
-                        shouldDisableDate={(date) =>
-                          inavailableDates.includes(format(date, 'yyyy-MM-dd'))
-                        }
-                        disabled={isLoading}
-                      />
-                    </Grid>
-                    <Grid item xs={12} md={7}>
-                      <Grid container flexDirection="column">
-                        <TextField
-                          required
-                          error={isEmpty}
-                          label="Your Name"
-                          variant="standard"
-                          sx={{ mb: 5 }}
-                          fullWidth
-                          onChange={(e) => setName(e.target.value)}
+                    <CheckCircleOutlineRoundedIcon
+                      color="primary"
+                      fontSize="large"
+                      sx={{ fontSize: 100 }}
+                    />
+                    <Typography variant="h6" my={2} textAlign="center">
+                      Your booking has been registered successfully
+                    </Typography>
+                  </Box>
+                ) : (
+                  <LocalizationProvider dateAdapter={AdapterDateFns}>
+                    <Typography
+                      variant="h6"
+                      alignItems="center"
+                      component="div"
+                      display="flex"
+                    >
+                      <PersonRoundedIcon sx={{ paddingRight: 1 }} />
+                      {props.doctor.name}
+                    </Typography>
+                    <Grid
+                      container
+                      alignItems="center"
+                      justifyContent="space-around"
+                    >
+                      <Grid item xs={12} md={5} justifyContent="center">
+                        <CalendarPicker
+                          minDate={minDate}
+                          maxDate={addDays(new Date(), CHOOSABLE_DAYS_LENGTH)}
+                          date={date}
+                          onChange={(newDate) => setDate(newDate)}
+                          views={['day']}
+                          shouldDisableDate={(date) =>
+                            inavailableDates.includes(
+                              format(date, 'yyyy-MM-dd')
+                            )
+                          }
                           disabled={isLoading}
                         />
-                        <Typography variant="subtitle1" pb={2}>
-                          {date && format(date, 'EEEE, do MMMM yyyy')}
-                        </Typography>
-                        <FormControl fullWidth>
-                          <InputLabel>Booking Time</InputLabel>
-                          <Select
-                            value={time}
-                            placeholder="Select a Booking Time"
-                            label="Booking Time"
-                            onChange={(e) => setTime(e.target.value)}
+                      </Grid>
+                      <Grid item xs={12} md={7}>
+                        <Grid container flexDirection="column">
+                          <TextField
+                            required
+                            error={isEmpty}
+                            label="Your Name"
+                            variant="standard"
+                            sx={{ mb: 5 }}
+                            fullWidth
+                            onChange={(e) => setName(e.target.value)}
                             disabled={isLoading}
-                          >
-                            {possibleTimes.map((time) => (
-                              <MenuItem
-                                value={time}
-                                key={time}
-                                disabled={inavailableTimes.includes(time)}
-                              >
-                                {time}
-                              </MenuItem>
-                            ))}
-                          </Select>
-                        </FormControl>
+                          />
+                          <Typography variant="subtitle1" pb={2}>
+                            {date && format(date, 'EEEE, do MMMM yyyy')}
+                          </Typography>
+                          <FormControl fullWidth>
+                            <InputLabel>Booking Time</InputLabel>
+                            <Select
+                              value={time}
+                              placeholder="Select a Booking Time"
+                              label="Booking Time"
+                              onChange={(e) => setTime(e.target.value)}
+                              disabled={isLoading}
+                            >
+                              {possibleTimes.map((time) => (
+                                <MenuItem
+                                  value={time}
+                                  key={time}
+                                  disabled={inavailableTimes.includes(time)}
+                                >
+                                  {time}
+                                </MenuItem>
+                              ))}
+                            </Select>
+                          </FormControl>
+                        </Grid>
                       </Grid>
                     </Grid>
-                  </Grid>
-                </LocalizationProvider>
-              )}
-            </>
-          )}
-        </Box>
-      </DialogContent>
-      <DialogActions>
-        <LoadingButton
-          fullWidth
-          loading={isLoading}
-          variant="contained"
-          sx={{ m: 2, borderRadius: 10 }}
-          onClick={isSuccess ? () => navigate('/bookings') : handleSubmit}
-        >
-          {isSuccess ? 'Check Your Bookings' : 'Confirm'}
-        </LoadingButton>
-      </DialogActions>
-    </Dialog>
+                  </LocalizationProvider>
+                )}
+              </>
+            )}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <LoadingButton
+            fullWidth
+            loading={isLoading}
+            variant="contained"
+            sx={{ m: 2, borderRadius: 10 }}
+            onClick={isSuccess ? () => navigate('/bookings') : handleSubmit}
+          >
+            {isSuccess ? 'Check Your Bookings' : 'Confirm'}
+          </LoadingButton>
+        </DialogActions>
+      </Dialog>
+
+      <Snackbar
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        open={isFetchingError}
+        onClose={() => setIsFetchingError(false)}
+        autoHideDuration={3000}
+      >
+        <Alert severity="error">
+          Something went wrong. Unable to fetch bookings.
+        </Alert>
+      </Snackbar>
+    </>
   );
 };
 

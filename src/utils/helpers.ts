@@ -1,6 +1,5 @@
 /*******************************************************************
- * notice that opening hours time are string in 24-hr format already
- * while booking time is floating number
+ * notice that all time are floating number
  ******************************************************************/
 
 import { Day, IDoctor, IFormattedDoctor } from '../types/DoctorTypes';
@@ -17,11 +16,8 @@ export const convertToTimeString = (time: number): string => {
   return `${h}:${m}`;
 };
 
-export const convertToFloat = (
-  timeString: string,
-  indicator: string
-): number => {
-  const [h, m] = timeString.split(indicator).map((digit) => Number(digit));
+export const convertToFloat = (timeString: string): number => {
+  const [h, m] = timeString.split(':').map((digit) => Number(digit));
   const decimalPlace = Number(m / 60);
   return h + decimalPlace;
 };
@@ -37,8 +33,8 @@ export const formatDoctorProfile = (doctor: IDoctor): IFormattedDoctor => {
     ),
     opening_hours: doctor.opening_hours.map((hour) => ({
       ...hour,
-      start: convertToFloat(hour.start, '.'),
-      end: convertToFloat(hour.end, '.'),
+      start: Number(hour.start),
+      end: Number(hour.end),
       day: Number(Day[hour.day]),
     })),
   };

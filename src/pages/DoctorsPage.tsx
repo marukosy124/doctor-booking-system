@@ -5,6 +5,8 @@ import {
   CircularProgress,
   Box,
   Typography,
+  Alert,
+  Snackbar,
 } from '@mui/material';
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import { useState, ChangeEvent, useEffect, KeyboardEvent } from 'react';
@@ -21,13 +23,12 @@ const DoctorsPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const queryString = searchParams.get('q') ?? '';
 
+  const [isError, setIsError] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>(queryString);
   const [doctors, setDoctors] = useState<IFormattedDoctor[]>([]);
   const [selectedDoctor, setSelectedDoctor] = useState<IFormattedDoctor>();
 
   const { isFetching, refetch } = useQuery('doctors', getDoctors, {
-    refetchOnWindowFocus: false,
-    retry: false,
     initialData: () => queryClient.getQueryData('doctors'),
     onSuccess: (data: IFormattedDoctor[]) => {
       let filteredDoctors = [...data];
@@ -43,6 +44,7 @@ const DoctorsPage: React.FC = () => {
       }
       setDoctors(filteredDoctors);
     },
+    onError: () => setIsError(true),
   });
 
   useEffect(() => {
@@ -114,6 +116,17 @@ const DoctorsPage: React.FC = () => {
           onClose={() => setSelectedDoctor(undefined)}
         />
       )}
+
+      <Snackbar
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        open={isError}
+        onClose={() => setIsError(false)}
+        autoHideDuration={3000}
+      >
+        <Alert severity="error">
+          Something went wrong. Unable to fetch doctors.
+        </Alert>
+      </Snackbar>
     </>
   );
 };

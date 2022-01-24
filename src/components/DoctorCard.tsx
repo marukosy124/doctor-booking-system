@@ -8,6 +8,7 @@ import {
 import { IFormattedDoctor } from '../types/DoctorTypes';
 import DoctorIcon from '../images/doctor.png';
 import PinDropRoundedIcon from '@mui/icons-material/PinDropRounded';
+import { memo } from 'react';
 
 interface DoctorCardProps {
   doctor: IFormattedDoctor;
@@ -62,4 +63,4 @@ const DoctorCard: React.FC<DoctorCardProps> = (props) => {
   );
 };
 
-export default DoctorCard;
+export default memo(DoctorCard);

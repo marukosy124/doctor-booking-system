@@ -8,7 +8,7 @@ import {
   Snackbar,
   Tab,
 } from '@mui/material';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useMutation, useQuery } from 'react-query';
 import { getBookings, getDoctors, updateBooking } from '../api';
 import {

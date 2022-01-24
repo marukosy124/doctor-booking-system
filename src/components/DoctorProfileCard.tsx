@@ -5,13 +5,13 @@ import {
   CardContent,
   Button,
   useMediaQuery,
-  useTheme,
 } from '@mui/material';
 import { IFormattedDoctor } from '../types/DoctorTypes';
 import DoctorIcon from '../images/doctor.png';
 import MapsHomeWorkIcon from '@mui/icons-material/MapsHomeWork';
 import CommentIcon from '@mui/icons-material/Comment';
 import { customTheme } from '../theme/theme';
+import { memo } from 'react';
 
 interface DoctorProfileCardProps {
   doctor: IFormattedDoctor;
@@ -34,6 +34,7 @@ const DoctorProfileCard: React.FC<DoctorProfileCardProps> = (props) => {
             <Grid container alignItems="center" justifyContent="center">
               <Grid item>
                 <img
+                  alt={props.doctor.name}
                   src={DoctorIcon}
                   width={100}
                   height={100}
@@ -80,4 +81,4 @@ const DoctorProfileCard: React.FC<DoctorProfileCardProps> = (props) => {
   );
 };
 
-export default DoctorProfileCard;
+export default memo(DoctorProfileCard);

@@ -14,7 +14,7 @@ import {
   ButtonProps,
   styled,
 } from '@mui/material';
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import MenuIcon from '@mui/icons-material/Menu';
 import HomeRoundedIcon from '@mui/icons-material/HomeRounded';
 import EventAvailableRoundedIcon from '@mui/icons-material/EventAvailableRounded';
@@ -139,4 +139,4 @@ const Navbar: React.FC = (props) => {
   );
 };
 
-export default Navbar;
+export default memo(Navbar);

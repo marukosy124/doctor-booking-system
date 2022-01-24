@@ -1,8 +1,12 @@
 # Necktie Frontend Engineer Assessment
 
+## Live Demo
+
+https://necktie-test.herokuapp.com/
+
 ## Setup
 
-1. Add the API key in your .env
+1. Add the API key in your .env as REACT_APP_API_KEY
 2. Run `yarn install` to install dependencies
 3. Run `yarn start` to run the app in the development mode. Open http://localhost:3000 to view it in the browser.
 
@@ -85,7 +89,7 @@ If I have more time, or more APIs or params are supported by the backend, I woul
 ### Assumptions
 
 **1. Performance and security of the app are not the first priority**:
-Due to the limitation on APIs, some functions that should be done by backend are now implemented on frontend (e.g. searching, filtering). As the current approach violates the privacy of data (e.g. users should not be able to access bookings that are not registered by them), and performance is hurt towards getting all records every time, I assume these conditions are not necessary.
+Due to the limitation on APIs, some functions that should be done by backend are now implemented on frontend (e.g. searching, filtering). As the current approach violates the privacy of data (e.g. users should not be able to access bookings that are not registered by them), and performance is hurt towards getting all records every time, I assume these conditions are not the most concerned.
 
 **2. Fixed time slots for booking**:
 For simplicity, only fixed time slots according to the doctor's opening hours are generated and open for booking. No manual insertion of bookings from backend or database is also assumed.

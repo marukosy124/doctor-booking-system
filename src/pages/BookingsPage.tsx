@@ -8,7 +8,7 @@ import {
   Snackbar,
   Tab,
 } from '@mui/material';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useMutation, useQuery } from 'react-query';
 import { getBookings, getDoctors, updateBooking } from '../api';
 import {
@@ -24,9 +24,9 @@ import { STATUS } from '../utils/constants';
 const BookingsPage = () => {
   const bookingIdsString = localStorage.getItem('bookings');
   const isBookingsUpdatedString = localStorage.getItem('isBookingsUpdated');
-  const bookingIds = JSON.parse(bookingIdsString ?? '');
+  const bookingIds = JSON.parse(bookingIdsString ?? '[]');
   const isBookingsUpdated =
-    JSON.parse(isBookingsUpdatedString ?? '') === 'true';
+    JSON.parse(isBookingsUpdatedString ?? 'false') === 'true';
 
   const [snackbarStatus, setSnackbarStatus] = useState<ISnackbarStatus>({
     isOpen: false,
@@ -52,7 +52,7 @@ const BookingsPage = () => {
     isLoading: isBookingsLoading,
     refetch,
   } = useQuery('bookings', getBookings, {
-    enabled: Boolean(bookingIds),
+    enabled: Boolean(bookingIdsString),
     select: useCallback((data: IBooking[]) => {
       // filter out user's bookings
       const bookingHistory = data.filter((booking) =>
@@ -91,7 +91,7 @@ const BookingsPage = () => {
     'doctors',
     getDoctors,
     {
-      enabled: Boolean(bookingIds),
+      enabled: Boolean(bookingIdsString),
       onError: () =>
         setSnackbarStatus({
           isOpen: true,
@@ -158,7 +158,9 @@ const BookingsPage = () => {
               </Box>
             ) : (
               <>
-                {bookings && bookings.length > 0 ? (
+                {bookings &&
+                bookings.filter((booking) => booking.status === item).length >
+                  0 ? (
                   <Grid container spacing={3}>
                     <>
                       {bookings

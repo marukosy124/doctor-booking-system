@@ -27,28 +27,44 @@ const DoctorsPage: React.FC = () => {
   const [doctors, setDoctors] = useState<IFormattedDoctor[]>([]);
   const [selectedDoctor, setSelectedDoctor] = useState<IFormattedDoctor>();
 
-  // get all doctors and filter by query string if exists
-  const { isFetching, refetch } = useQuery('doctors', getDoctors, {
-    onSuccess: (data: IFormattedDoctor[]) => {
-      let filteredDoctors = [...data];
-      if (queryString) {
-        const qs = queryString.toLowerCase();
-        filteredDoctors = data.filter((doctor) => {
-          return (
-            doctor.name.toLowerCase().includes(qs) ||
-            doctor.description.toLowerCase().includes(qs) ||
-            doctor.fullAddress.toLowerCase().includes(qs)
-          );
-        });
-      }
-      setDoctors(filteredDoctors);
-    },
+  // get all doctors
+  const { data, isLoading } = useQuery('doctors', getDoctors, {
     onError: () => setIsError(true),
   });
 
-  // refetch when query string changes (simulate real searching)
+  // set raw (/cached) doctor data into doctors state for filtering
   useEffect(() => {
-    refetch();
+    if (data) {
+      setDoctors(data);
+    }
+  }, [data]);
+
+  // re-filter when query string changes
+  useEffect(() => {
+    async function getFilteredDoctors() {
+      const filteredDoctors = await new Promise<IFormattedDoctor[]>(
+        (resolve) => {
+          if (data) {
+            let filteredDoctors = [...data];
+            if (queryString) {
+              const qs = queryString.toLowerCase();
+              filteredDoctors = data.filter((doctor) => {
+                return (
+                  doctor.name.toLowerCase().includes(qs) ||
+                  doctor.description.toLowerCase().includes(qs) ||
+                  doctor.fullAddress.toLowerCase().includes(qs)
+                );
+              });
+            }
+            resolve(filteredDoctors);
+          } else {
+            resolve([]);
+          }
+        }
+      );
+      setDoctors(filteredDoctors);
+    }
+    getFilteredDoctors();
     setSearchQuery(queryString);
   }, [queryString]);
 
@@ -81,12 +97,12 @@ const DoctorsPage: React.FC = () => {
         />
 
         <Box
-          display={isFetching || doctors?.length === 0 ? 'flex' : 'block'}
+          display={isLoading || doctors?.length === 0 ? 'flex' : 'block'}
           justifyContent="center"
           height={400}
           alignItems="center"
         >
-          {isFetching ? (
+          {isLoading ? (
             <CircularProgress />
           ) : (
             <>

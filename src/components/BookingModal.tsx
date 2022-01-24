@@ -10,22 +10,20 @@ import {
   DialogContent,
   DialogTitle,
   CircularProgress,
-  useMediaQuery,
-  useTheme,
   Box,
   IconButton,
   Theme,
   Typography,
   Alert,
   Snackbar,
-  Divider,
+  useMediaQuery,
 } from '@mui/material';
 import { IFormattedDoctor } from '../types/DoctorTypes';
 import { useCallback, useEffect, useState } from 'react';
 import AdapterDateFns from '@mui/lab/AdapterDateFns';
 import LocalizationProvider from '@mui/lab/LocalizationProvider';
 import CalendarPicker from '@mui/lab/CalendarPicker';
-import { addDays, addHours, format, getDay } from 'date-fns';
+import { addDays, format, getDay } from 'date-fns';
 import { IBooking } from '../types/BookingTypes';
 import { useMutation, useQuery } from 'react-query';
 import { createBooking, getBookings } from '../api';
@@ -38,7 +36,8 @@ import PersonRoundedIcon from '@mui/icons-material/PersonRounded';
 import { AxiosError } from 'axios';
 import MapsHomeWorkIcon from '@mui/icons-material/MapsHomeWork';
 import AccessTimeFilledOutlinedIcon from '@mui/icons-material/AccessTimeFilledOutlined';
-const CHOOSABLE_DAYS_LENGTH = 10;
+import { CHOOSABLE_DAYS_LENGTH } from '../utils/constants';
+import { customTheme } from '../theme/theme';
 
 interface BookingModalProps {
   doctor: IFormattedDoctor;
@@ -48,8 +47,7 @@ interface BookingModalProps {
 const BookingModal: React.FC<BookingModalProps> = (props) => {
   const navigate = useNavigate();
 
-  const theme = useTheme();
-  const fullScreen = useMediaQuery(theme.breakpoints.down('md'));
+  const fullWidth = useMediaQuery(customTheme.breakpoints.down('md'));
 
   const [minDate, setMinDate] = useState<Date>(new Date());
   const [date, setDate] = useState<Date | null>(new Date());
@@ -62,6 +60,7 @@ const BookingModal: React.FC<BookingModalProps> = (props) => {
   const [error, setError] = useState<string>('');
   const [isFetchingError, setIsFetchingError] = useState<boolean>(false);
 
+  // get all bookings
   const {
     data: bookings,
     isLoading: isBookingsLoading,
@@ -194,6 +193,7 @@ const BookingModal: React.FC<BookingModalProps> = (props) => {
     }
   }, [date]);
 
+  // create booking
   const {
     data: newBooking,
     mutate,
@@ -238,12 +238,7 @@ const BookingModal: React.FC<BookingModalProps> = (props) => {
 
   return (
     <>
-      <Dialog
-        fullScreen={fullScreen}
-        maxWidth="xl"
-        onClose={props.onClose}
-        open
-      >
+      <Dialog fullScreen={fullWidth} maxWidth="xl" onClose={props.onClose} open>
         <DialogTitle>
           Make a Booking
           <IconButton
@@ -267,7 +262,7 @@ const BookingModal: React.FC<BookingModalProps> = (props) => {
               flexDirection: 'column',
               m: 'auto',
               width: 'fit-content',
-              minWidth: fullScreen ? '100%' : 780,
+              minWidth: fullWidth ? '100%' : 780,
               minHeight: 300,
               justifyContent: 'center',
             }}
@@ -300,7 +295,6 @@ const BookingModal: React.FC<BookingModalProps> = (props) => {
                         Your booking has been registered successfully
                       </Typography>
                     </Box>
-                    {/* <Grid item xs={6}> */}
                     <Box
                       sx={{
                         border: '1px solid primary',

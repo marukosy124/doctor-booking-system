@@ -11,6 +11,7 @@ import { IFormattedDoctor } from '../types/DoctorTypes';
 import DoctorIcon from '../images/doctor.png';
 import MapsHomeWorkIcon from '@mui/icons-material/MapsHomeWork';
 import CommentIcon from '@mui/icons-material/Comment';
+import { customTheme } from '../theme/theme';
 
 interface DoctorProfileCardProps {
   doctor: IFormattedDoctor;
@@ -18,8 +19,7 @@ interface DoctorProfileCardProps {
 }
 
 const DoctorProfileCard: React.FC<DoctorProfileCardProps> = (props) => {
-  const theme = useTheme();
-  const fullWidth = useMediaQuery(theme.breakpoints.down('md'));
+  const fullWidth = useMediaQuery(customTheme.breakpoints.down('md'));
 
   return (
     <Card sx={{ my: 4 }}>

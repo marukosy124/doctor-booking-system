@@ -17,7 +17,7 @@ export interface IFormattedBooking extends Omit<IBooking, 'status' | 'start'> {
 }
 
 export interface IUpdateBooking {
-  bookingId: string;
+  id: string;
   status: string;
 }
 

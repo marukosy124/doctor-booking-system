@@ -6,13 +6,20 @@ import {
   Box,
   Alert,
   Snackbar,
+  Tab,
 } from '@mui/material';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useMutation, useQuery } from 'react-query';
 import { getBookings, getDoctors, updateBooking } from '../api';
-import { IBooking, ISnackbarStatus } from '../types/BookingTypes';
+import {
+  IBooking,
+  IFormattedBooking,
+  ISnackbarStatus,
+} from '../types/BookingTypes';
 import { convertToTimeString } from '../utils/helpers';
 import BookingCard from '../components/BookingCard';
+import { TabContext, TabList, TabPanel } from '@mui/lab';
+import { STATUS } from '../utils/constants';
 
 const BookingsPage = () => {
   const bookingIdsString = localStorage.getItem('bookings');
@@ -26,7 +33,9 @@ const BookingsPage = () => {
     message: '',
     status: undefined,
   });
+  const [currentTab, setCurrentTab] = useState<string>('0');
 
+  // check if the booking has passed current time
   const isFinished = (date: string, start: number) => {
     const startTime = convertToTimeString(start);
     const dateObject = new Date(`${date} ${startTime}`);
@@ -37,6 +46,7 @@ const BookingsPage = () => {
     }
   };
 
+  // get all bookings, then filter by stored booking ids in localStorage and do formatting and sorting
   const {
     data: bookings,
     isLoading: isBookingsLoading,
@@ -49,17 +59,19 @@ const BookingsPage = () => {
         bookingIds.includes(booking.id)
       );
       // format the bookings fto serve the cards
-      let filteredUserBookings = bookingHistory.map((booking) => ({
-        ...booking,
-        start: convertToTimeString(booking.start),
-        end: convertToTimeString(booking.start + 1),
-        status: isFinished(booking.date, booking.start)
-          ? 'finished'
-          : booking.status,
-        fullStartDatetime: new Date(
-          `${booking.date} ${convertToTimeString(booking.start)}`
-        ),
-      }));
+      let filteredUserBookings: IFormattedBooking[] = bookingHistory.map(
+        (booking) => ({
+          ...booking,
+          start: convertToTimeString(booking.start),
+          end: convertToTimeString(booking.start + 1),
+          status: isFinished(booking.date, booking.start)
+            ? 'finished'
+            : booking.status,
+          fullStartDatetime: new Date(
+            `${booking.date} ${convertToTimeString(booking.start)}`
+          ),
+        })
+      );
       // sort the bookings according to the booking time in ascending order
       filteredUserBookings = filteredUserBookings.sort(
         (prevBooking, nextBooking) =>
@@ -89,6 +101,7 @@ const BookingsPage = () => {
     }
   );
 
+  // update booking status
   const { mutateAsync, isLoading: isUpdating } = useMutation(updateBooking, {
     onSuccess: async () => {
       await refetch();
@@ -113,59 +126,79 @@ const BookingsPage = () => {
 
   return (
     <Container sx={{ p: 2, mx: 'auto' }} maxWidth={false}>
-      <Typography variant="h5" pb={4}>
+      <Typography variant="h5" pb={2}>
         Your Latest Bookings
       </Typography>
-      {isDoctorsLoading ||
-      isUpdating ||
-      isBookingsLoading ||
-      isBookingsUpdated ? (
-        <Box
-          display="flex"
-          justifyContent="center"
-          height={400}
-          alignItems="center"
-          paddingTop={3}
-        >
-          <CircularProgress />
+      <TabContext value={currentTab}>
+        <Box sx={{ borderBottom: 1, borderColor: 'divider', marginBottom: 1 }}>
+          <TabList
+            onChange={(event: React.SyntheticEvent, newTab: string) =>
+              setCurrentTab(newTab)
+            }
+          >
+            {STATUS.map((item, index) => (
+              <Tab label={item} key={item} value={String(index)} />
+            ))}
+          </TabList>
         </Box>
-      ) : (
-        <>
-          {bookings && bookings.length > 0 ? (
-            <Grid container spacing={3}>
+        {STATUS.map((item, index) => (
+          <TabPanel value={String(index)} key={item}>
+            {isDoctorsLoading ||
+            isUpdating ||
+            isBookingsLoading ||
+            isBookingsUpdated ? (
+              <Box
+                display="flex"
+                justifyContent="center"
+                height={400}
+                alignItems="center"
+                paddingTop={3}
+              >
+                <CircularProgress />
+              </Box>
+            ) : (
               <>
-                {bookings.map((booking) => (
-                  <Grid item xs={12} sm={6} md={4} key={booking.id}>
-                    <BookingCard
-                      doctor={findDoctorByBooking(booking)}
-                      booking={booking}
-                      isLoading={isUpdating}
-                      onCancel={() =>
-                        mutateAsync({
-                          bookingId: booking.id,
-                          status: 'cancelled',
-                        })
-                      }
-                    />
+                {bookings && bookings.length > 0 ? (
+                  <Grid container spacing={3}>
+                    <>
+                      {bookings
+                        .filter((booking) => booking.status === item)
+                        .map((booking) => (
+                          <Grid item xs={12} sm={6} md={4} key={booking.id}>
+                            <BookingCard
+                              doctor={findDoctorByBooking(booking)}
+                              booking={booking}
+                              isLoading={isUpdating}
+                              onCancel={() =>
+                                mutateAsync({
+                                  id: booking.id,
+                                  status: 'cancelled',
+                                })
+                              }
+                            />
+                          </Grid>
+                        ))}
+                    </>
                   </Grid>
-                ))}
+                ) : (
+                  <Box
+                    display="flex"
+                    justifyContent="center"
+                    height={400}
+                    alignItems="center"
+                    paddingTop={3}
+                  >
+                    <Typography variant="subtitle1" textAlign="center">
+                      No bookings
+                    </Typography>
+                  </Box>
+                )}
               </>
-            </Grid>
-          ) : (
-            <Box
-              display="flex"
-              justifyContent="center"
-              height={400}
-              alignItems="center"
-              paddingTop={3}
-            >
-              <Typography variant="subtitle1" textAlign="center">
-                No bookings
-              </Typography>
-            </Box>
-          )}
-        </>
-      )}
+            )}
+          </TabPanel>
+        ))}
+      </TabContext>
+
       <Snackbar
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
         open={snackbarStatus.isOpen}

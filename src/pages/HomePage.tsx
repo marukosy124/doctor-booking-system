@@ -21,36 +21,21 @@ import DoctorCard from '../components/DoctorCard';
 import { ChangeEvent, useState, KeyboardEvent, Fragment } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import BookingModal from '../components/BookingModal';
-
-const responsive = {
-  desktop: {
-    breakpoint: { max: 3000, min: 1024 },
-    items: 3,
-    slidesToSlide: 3,
-  },
-  tablet: {
-    breakpoint: { max: 1024, min: 464 },
-    items: 2,
-    slidesToSlide: 2,
-  },
-  mobile: {
-    breakpoint: { max: 464, min: 0 },
-    items: 1,
-    slidesToSlide: 1,
-  },
-};
+import { RESPONSIVE_CAROUSEL, SLIDES_LENGTH } from '../utils/constants';
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
 
-  const [maxSlidesLength, setMaxSlidesLength] = useState(6);
+  const [maxSlidesLength, setMaxSlidesLength] = useState(SLIDES_LENGTH);
   const [isError, setIsError] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedDoctor, setSelectedDoctor] = useState<IFormattedDoctor>();
 
   const { data: doctors, isLoading } = useQuery('doctors', getDoctors, {
     onSuccess: (data: IFormattedDoctor[]) =>
-      setMaxSlidesLength(data.length >= 6 ? 6 : data.length),
+      setMaxSlidesLength(
+        data.length >= SLIDES_LENGTH ? SLIDES_LENGTH : data.length
+      ),
     onError: () => setIsError(true),
   });
 
@@ -100,7 +85,7 @@ const HomePage: React.FC = () => {
             <>
               {doctors && doctors.length > 0 ? (
                 <Carousel
-                  responsive={responsive}
+                  responsive={RESPONSIVE_CAROUSEL}
                   removeArrowOnDeviceType={['mobile']}
                 >
                   {doctors?.slice(0, maxSlidesLength).map((doctor, index) => (

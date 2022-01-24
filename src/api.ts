@@ -37,10 +37,10 @@ export const createBooking = (booking: INewBooking): Promise<IBooking> => {
 };
 
 export const updateBooking = ({
-  bookingId,
+  id,
   status,
 }: IUpdateBooking): Promise<IBooking> => {
   return axios
-    .patch(`/booking/${bookingId}`, { status: status })
+    .patch(`/booking/${id}`, { status: status })
     .then((res: AxiosResponse) => res.data);
 };

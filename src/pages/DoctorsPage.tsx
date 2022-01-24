@@ -27,6 +27,7 @@ const DoctorsPage: React.FC = () => {
   const [doctors, setDoctors] = useState<IFormattedDoctor[]>([]);
   const [selectedDoctor, setSelectedDoctor] = useState<IFormattedDoctor>();
 
+  // get all doctors and filter by query string if exists
   const { isFetching, refetch } = useQuery('doctors', getDoctors, {
     onSuccess: (data: IFormattedDoctor[]) => {
       let filteredDoctors = [...data];
@@ -45,6 +46,7 @@ const DoctorsPage: React.FC = () => {
     onError: () => setIsError(true),
   });
 
+  // refetch when query string changes (simulate real searching)
   useEffect(() => {
     refetch();
     setSearchQuery(queryString);

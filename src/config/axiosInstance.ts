@@ -1,11 +1,14 @@
 import axios from 'axios';
 
-axios.defaults.baseURL = 'https://fe-assignment-api.herokuapp.com';
-axios.defaults.headers.common['Content-Type'] = 'application/json';
-axios.defaults.headers.common['Accept'] = 'application/json';
-axios.defaults.headers.common['Access-Control-Allow-Origin'] = '*';
+const instance = axios.create({
+  baseURL: process.env.REACT_APP_BASE_URL,
+});
 
-axios.interceptors.request.use(
+instance.defaults.headers.common['Content-Type'] = 'application/json';
+instance.defaults.headers.common['Accept'] = 'application/json';
+instance.defaults.headers.common['Access-Control-Allow-Origin'] = '*';
+
+instance.interceptors.request.use(
   async (config) => {
     // Do something before request is sent
     config.headers!['x-api-key'] = process.env.REACT_APP_API_KEY ?? '';
@@ -17,7 +20,7 @@ axios.interceptors.request.use(
   }
 );
 
-axios.interceptors.response.use(
+instance.interceptors.response.use(
   function (response) {
     // Any status code that lie within the range of 2xx cause this function to trigger
     // Do something with response data
@@ -30,4 +33,4 @@ axios.interceptors.response.use(
   }
 );
 
-export default axios;
+export default instance;

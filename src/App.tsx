@@ -7,12 +7,12 @@ import Navbar from './components/Navbar';
 import { ThemeProvider } from '@mui/material/styles';
 import { customTheme } from './theme/theme';
 import { QueryClientProvider } from 'react-query';
-import { queryClient } from './config/reactQuery';
+import { customQueryClient } from './config/reactQuery';
 
 const App = () => {
   return (
     <ThemeProvider theme={customTheme}>
-      <QueryClientProvider client={queryClient}>
+      <QueryClientProvider client={customQueryClient}>
         <Navbar />
         <Routes>
           <Route path="/" element={<HomePage />} />

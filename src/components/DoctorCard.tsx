@@ -31,6 +31,7 @@ const DoctorCard: React.FC<DoctorCardProps> = (props) => {
         }}
       >
         <img
+          alt={props.doctor.name}
           src={DoctorIcon}
           width={100}
           height={100}

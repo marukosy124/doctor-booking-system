@@ -53,37 +53,40 @@ const BookingsPage = () => {
     refetch,
   } = useQuery('bookings', getBookings, {
     enabled: Boolean(bookingIdsString),
-    select: useCallback((data: IBooking[]) => {
-      // filter out user's bookings
-      const bookingHistory = data.filter((booking) =>
-        bookingIds.includes(booking.id)
-      );
-      // format the bookings fto serve the cards
-      let filteredUserBookings: IFormattedBooking[] = bookingHistory.map(
-        (booking) => ({
-          ...booking,
-          start: convertToTimeString(booking.start),
-          end: convertToTimeString(booking.start + 1),
-          status: isFinished(booking.date, booking.start)
-            ? 'finished'
-            : booking.status,
-          fullStartDatetime: new Date(
-            `${booking.date} ${convertToTimeString(booking.start)}`
-          ),
-        })
-      );
-      // sort the bookings according to the booking time in ascending order
-      filteredUserBookings = filteredUserBookings.sort(
-        (prevBooking, nextBooking) =>
-          prevBooking.fullStartDatetime > nextBooking.fullStartDatetime
-            ? 1
-            : nextBooking.fullStartDatetime > prevBooking.fullStartDatetime
-            ? -1
-            : 0
-      );
-      localStorage.setItem('isBookingsUpdated', JSON.stringify('false'));
-      return filteredUserBookings;
-    }, []),
+    select: useCallback(
+      (data: IBooking[]) => {
+        // filter out user's bookings
+        const bookingHistory = data.filter((booking) =>
+          bookingIds.includes(booking.id)
+        );
+        // format the bookings fto serve the cards
+        let filteredUserBookings: IFormattedBooking[] = bookingHistory.map(
+          (booking) => ({
+            ...booking,
+            start: convertToTimeString(booking.start),
+            end: convertToTimeString(booking.start + 1),
+            status: isFinished(booking.date, booking.start)
+              ? 'finished'
+              : booking.status,
+            fullStartDatetime: new Date(
+              `${booking.date} ${convertToTimeString(booking.start)}`
+            ),
+          })
+        );
+        // sort the bookings according to the booking time in ascending order
+        filteredUserBookings = filteredUserBookings.sort(
+          (prevBooking, nextBooking) =>
+            prevBooking.fullStartDatetime > nextBooking.fullStartDatetime
+              ? 1
+              : nextBooking.fullStartDatetime > prevBooking.fullStartDatetime
+              ? -1
+              : 0
+        );
+        localStorage.setItem('isBookingsUpdated', JSON.stringify('false'));
+        return filteredUserBookings;
+      },
+      [bookingIds]
+    ),
   });
 
   // only runs the requests when localstorage has stored bookings

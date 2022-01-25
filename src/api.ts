@@ -1,5 +1,5 @@
 import { AxiosResponse } from 'axios';
-import axios from './config/axios';
+import axiosInstance from './config/axiosInstance';
 import { IBooking, INewBooking, IUpdateBooking } from './types/BookingTypes';
 import { IDoctor, IFormattedDoctor } from './types/DoctorTypes';
 import { formatDoctorProfile } from './utils/helpers';
@@ -9,7 +9,7 @@ import { formatDoctorProfile } from './utils/helpers';
  ******************************************************************/
 
 export const getDoctors = (): Promise<IFormattedDoctor[]> => {
-  return axios
+  return axiosInstance
     .get('/doctor')
     .then((res: AxiosResponse) =>
       res.data.map((doctor: IDoctor) => formatDoctorProfile(doctor))
@@ -17,30 +17,32 @@ export const getDoctors = (): Promise<IFormattedDoctor[]> => {
 };
 
 export const getDoctorById = (doctorId: string): Promise<IFormattedDoctor> => {
-  return axios
+  return axiosInstance
     .get(`/doctor/${doctorId}`)
     .then((res: AxiosResponse) => formatDoctorProfile(res.data));
 };
 
 export const getBookings = (): Promise<IBooking[]> => {
-  return axios.get('/booking').then((res: AxiosResponse) => res.data);
+  return axiosInstance.get('/booking').then((res: AxiosResponse) => res.data);
 };
 
 export const getBookingById = (bookingId: string): Promise<IBooking> => {
-  return axios
+  return axiosInstance
     .get(`/booking/${bookingId}`)
     .then((res: AxiosResponse) => res.data);
 };
 
 export const createBooking = (booking: INewBooking): Promise<IBooking> => {
-  return axios.post('/booking', booking).then((res: AxiosResponse) => res.data);
+  return axiosInstance
+    .post('/booking', booking)
+    .then((res: AxiosResponse) => res.data);
 };
 
 export const updateBooking = ({
   id,
   status,
 }: IUpdateBooking): Promise<IBooking> => {
-  return axios
+  return axiosInstance
     .patch(`/booking/${id}`, { status: status })
     .then((res: AxiosResponse) => res.data);
 };

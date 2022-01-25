@@ -66,13 +66,17 @@ const BookingModal: React.FC<BookingModalProps> = (props) => {
     isLoading: isBookingsLoading,
     isFetched,
   } = useQuery('bookings', getBookings, {
-    select: useCallback((data: IBooking[]) => {
-      const confirmedBookings = data.filter(
-        (booking) =>
-          booking.status === 'confirmed' && booking.doctorId === props.doctor.id
-      );
-      return confirmedBookings;
-    }, []),
+    select: useCallback(
+      (data: IBooking[]) => {
+        const confirmedBookings = data.filter(
+          (booking) =>
+            booking.status === 'confirmed' &&
+            booking.doctorId === props.doctor.id
+        );
+        return confirmedBookings;
+      },
+      [props.doctor.id]
+    ),
   });
 
   const computeDates = () => {

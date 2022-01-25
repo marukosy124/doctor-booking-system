@@ -6,7 +6,7 @@ https://necktie-test.herokuapp.com/
 
 ## Setup
 
-1. Add the API key in your .env as REACT_APP_API_KEY
+1. Add the API key in your .env
 2. Run `yarn install` to install dependencies
 3. Run `yarn start` to run the app in the development mode. Open http://localhost:3000 to view it in the browser.
 
@@ -15,11 +15,13 @@ https://necktie-test.herokuapp.com/
 ### React
 
 **Reason**: Flexibility
+
 As React is a library instead of framework like Vue, it offers APIs but not routing and state management tools. Therefore, it offers a high flexibility on choice of tools and implementation. As the scale of this project is relatively small, such flexibility allows me to choose whats fits this project instead of having more than what this projects needs.
 
 ### Material UI (MUI)
 
-**Purpose**: Provides UI components and theme.
+**Purpose**: Provides UI components and theme
+
 **Benefits**:
 
 - Offers a large variety of UI components and flexiblity on customization
@@ -33,6 +35,7 @@ As React is a library instead of framework like Vue, it offers APIs but not rout
 ### Axios
 
 **Purpose**: HTTP request and response handling
+
 **Benefits**:
 
 - Supports Promise API so that it can be used intercept HTTP requests and responses when necessary
@@ -41,6 +44,7 @@ As React is a library instead of framework like Vue, it offers APIs but not rout
 ### React Query
 
 **Purpose**: Faciliates data fetching and updating for React
+
 **Benefits**:
 
 - Automicatically identifies the request state (e.g. isLoading, isSuccess) so that no global states are required for handling request states
@@ -53,6 +57,7 @@ As React is a library instead of framework like Vue, it offers APIs but not rout
 ### React Router
 
 **Purpose**: Client-side routing
+
 **Benefits**:
 
 - Provides a standardized structure of the pages of the app
@@ -85,22 +90,28 @@ If I have more time, or more APIs or params are supported by the backend, I woul
 
 - Some devtools or logging functions need to be removed before deployment
 - As Heroku does not provide buildpack for create-react-app, an extra buildpack needs to be set for deployment
+- Variables in .env need to be configurated in Herouku separately
 
 ### Assumptions
 
-**1. Performance and security of the app are not the first priority**:
+**1. Performance and security of the app are not the first priority**
+
 Due to the limitation on APIs, some functions that should be done by backend are now implemented on frontend (e.g. searching, filtering). As the current approach violates the privacy of data (e.g. users should not be able to access bookings that are not registered by them), and performance is hurt towards getting all records every time, I assume these conditions are not the most concerned.
 
-**2. Fixed time slots for booking**:
+**2. Fixed time slots for booking**
+
 For simplicity, only fixed time slots according to the doctor's opening hours are generated and open for booking. No manual insertion of bookings from backend or database is also assumed.
 
 **3. The scale of the project is relatively small**
+
 As mentioned, small scale is assumed for this project. Therefore, I try not to use global state mangement such as Redux in this project. Since only one or two parts of the app may work better if Redux is used (e.g. get user's bookings), but it takes quite a lot of code to implement Redux, which is not necessary for such small-scaled project. At this stage, I use localStorage to replace Redux.
 
 ## Additional Features
 
 **1. View and cancel bookings**
+
 As long as the user does not clear the localStorage of a browser, they can view and cancel their submitted bookings using the same browser on the same device.
 
 **2. Search doctors by keywords**
+
 User can search doctors by some keywords. Doctors that have such keywords in their name, description or address will be returned.

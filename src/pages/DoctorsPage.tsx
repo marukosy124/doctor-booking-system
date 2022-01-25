@@ -66,7 +66,7 @@ const DoctorsPage: React.FC = () => {
     }
     getFilteredDoctors();
     setSearchQuery(queryString);
-  }, [queryString]);
+  }, [queryString, data]);
 
   const handleOnEnterPress = (e: KeyboardEvent<HTMLDivElement>) => {
     if (e.key === 'Enter') {

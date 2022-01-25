@@ -115,3 +115,15 @@ As long as the user does not clear the localStorage of a browser, they can view 
 **2. Search doctors by keywords**
 
 User can search doctors by some keywords. Doctors that have such keywords in their name, description or address will be returned.
+
+## Tests
+
+You are welcomed to test the app using your own test cases. Here are some suggested test cases:
+
+- [ ] Responsiveness
+- [ ] Navigation
+- [ ] Search doctor by some keywords
+- [ ] Make a valid booking
+- [ ] Make an invalid booking
+- [ ] Check booking history
+- [ ] Cancel a booking

@@ -1,8 +1,10 @@
-# Necktie Frontend Engineer Assessment
+# Doctor Booking System
+
+This is originally a frontend engineer assessment. The backend and database is not prepared by me.
 
 ## Live Demo
 
-https://necktie-test.herokuapp.com/
+https://doctor-booking-system.herokuapp.com/
 
 ## Setup
 

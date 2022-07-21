@@ -1,6 +1,6 @@
 # Doctor Booking System
 
-This is originally a frontend engineer assessment. The backend and database are not prepared by me.
+This is originally a frontend engineer assessment. The backend and database are given by the assessment.
 
 ## Live Demo
 
